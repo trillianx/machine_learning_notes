@@ -409,6 +409,43 @@ plt.show()
 
 Finally, go beyond simple imputation techniques and make the most of your dataset by using advanced imputation techniques that rely on machine learning models, to be able to accurately impute and evaluate your missing data. You will be using methods such as KNN and MICE in order to get the most out of your missing data!
 
+The **k-Nearest Neighbors (KNN)** imputation technique uses the closest $k$  observations to the null value to determine its imputed value. 
+
+```python
+from fancyimpute import KNN
+knn_imputer = KNN()
+diabetes_knn = diabetes.copy(deep=True)
+diabetes_knn.iloc[:, :] = knn.imputer.fit_transform(diabetes_knn)
+```
+
+The **Multiple Imputation by Chained Equation (MICE)** performs multiple regressions over random sample of the data. Then it takes the average of the multiple regression values and uses that to fill in the value. MICE is a very robust for imputing data. 
+
+```python
+from fancyimpute import IterativeImputer
+MICE_imputer = IterativeImputer()
+diabetes_MICE = diabetes.copy(deep=True)
+diabetes_MICE.iloc[:, :] = MICE_imputer.fit_transform(diabetes_MICE)
+```
+
+### Imputing Categorical Values
+
+So far we have imputed numerical values. However, we can do imputation on categorical values too. But we need to first encode the categorical values before they can be imputed. We make use of *one-hot-encoding* to convert categorical to numerical values or use *ordinal encoder*. Next, we impute the NaN value with the "most frequent category". 
+
+```python
+from sklearn.preprocessing import OrdinalEncoder
+
+# Instantiate the object: 
+ambience_ord_enc = OrdinalEncoder()
+
+# Select non-null values in the ambience dataset
+ambience = users['ambience']
+ambience_not_null = ambience[ambience.notnull()]
+reshaped_vals = ambience_not_null.values.reshape(-1,1)
+
+# Encode the non-null values of ambience
+encoded_vals = ambience_ord_enc.fit_transform(reshaped_vals)
+```
+
 
 
 
