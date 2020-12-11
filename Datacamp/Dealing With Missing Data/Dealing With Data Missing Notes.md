@@ -286,3 +286,130 @@ When it comes to deleting the missing data, there are two types:
 
 Pairwise deletion is preferred as it does not delete/skip a large amount of data while the listwise deletion does. When the number of values that are missing are small compared to the total amount of data, listwise deletion can be used. 
 
+## Chapter 3: Imputation Techniques
+
+Embark on the world of data imputation! In this chapter, you will apply basic imputation techniques to fill in missing data and visualize your imputations to be able to evaluate your imputations' performance.
+
+The most common imputations is done using the **mean, median** and **mode**. Let's see how this can be performed: 
+
+```python
+from sklearn.impute import SimpleImputer
+diabetes_mean = diabetes.copy(deep=True)
+
+# Create the mean imputer object
+mean_imputer = SimpleImputer(strategy='mean')
+
+# Impute the missing values
+diabetes_mean.iloc[:,:] = mean_imputer.fit_transform(diabetes_mean)
+```
+
+To use the median, you simply need to set the `strategy` to `'median'` on line 5. For mode, we set the `strategy='most_frequent'. ` For a constant value such as `-999`, you can set the following: `strategy='constant', fill_value=-999`. 
+
+The above plot after imputation using mean looks something like this: 
+
+![image-20201211093950255](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211093950255.png)
+
+### Imputing Time Series Data
+
+For imputation time series data, let's look at the Airquality dataset. We saw that `Ozone` had the most number of missing values. 
+
+To fill the NaN values in this dataset we will explore the `.ffill()` method in pandas. The filling methods are of two types:
+
+*    **backfill:**`bfill` -  The back fill replaces the NaNs with values that come AFTER the NaNs. 
+
+    ```python
+    airquality.fillna(method='bfill', inplace=True)
+    ```
+
+    ![image-20201211100433423](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211100433423.png)
+
+*   **fowardfill**: `ffill` - The forward fill replaces the NaNs with the values that come BEFORE the NaNs. This is done in the following way: 
+
+    ```python
+    airquality.fillna(method='ffill', inplace=True)
+    ```
+
+     This is what the forward fill does: 
+    ![image-20201211100256021](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211100256021.png)
+
+Those these are great alternatives but when it comes to time series data, the `.interpolate()` method is the most appropriate to fill missing data. The interpolate method has the following strategies to fill NaNs: 
+
+*   **Linear:** This method fits a line between non-missing values and replaces the missing values with values from the fit line. 
+
+    ```python
+    df.interpolate(method='linear', inplace=True)
+    ```
+
+    ![image-20201211100800102](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211100800102.png)
+    And here's how the output looks like: 
+    ![image-20201211100843928](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211100843928.png)
+
+*   **Quadratic:** In this method a quadratic function is fit to the data and the missing values are imputed using the values from the quadratic function: 
+
+    ```python
+    df.interpolate(method='quadratic', inplace=True)
+    ```
+
+    ![image-20201211101040230](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211101040230.png)
+    ![image-20201211101100596](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211101100596.png)
+
+*   **Nearest**: This is a combination of `bfill` and `ffill`. The imputation is done based on the nearest value. 
+
+    ```python
+    df.interpolate(method='nearest', inplace=True)
+    ```
+
+    ![image-20201211101236645](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211101236645.png)
+    ![image-20201211101258747](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211101258747.png)
+
+### Visualizing Time-series Imputations
+
+Here's how we can visualize: 
+
+```python
+airquality['Ozone'].plot(title='Ozone', marker='o', figsize=(30,5))
+```
+
+![image-20201211101623098](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211101623098.png)
+
+Let's apply the imputation technique and see how it looks: 
+
+```python
+ffill_imp['Ozone'].plot(color='red', marker='o', linestyle='dotted', figsize=(30,5))
+airquality['Ozone'].plot(title='Ozone', marker='o', figsize=(30,5))
+```
+
+Here `fill_imp` is the imputed dataframe of airquality using forward fill. 
+
+![image-20201211101818658](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211101818658.png)
+
+Like this we can visualize decide which imputation technique looks good. We can create multiple plots and see all techniques and decide which looks better: 
+
+```python
+# Set nrows to 3 and ncols to 1
+fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(30, 20))
+
+# Create a dictionary of interpolations
+interpolations = {'Linear Interpolation': linear, 'Quadratic Interpolation': quadratic, 
+                  'Nearest Interpolation': nearest}
+
+# Loop over axes and interpolations
+for ax, df_key in zip(axes, interpolations):
+  # Select and also set the title for a DataFrame
+  interpolations[df_key].Ozone.plot(color='red', marker='o', 
+                                 linestyle='dotted', ax=ax)
+  airquality.Ozone.plot(title=df_key + ' - Ozone', marker='o', ax=ax)
+  
+plt.show()
+```
+
+![image-20201211102643752](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211102643752.png)
+
+## Advanced Imputation Techniques
+
+Finally, go beyond simple imputation techniques and make the most of your dataset by using advanced imputation techniques that rely on machine learning models, to be able to accurately impute and evaluate your missing data. You will be using methods such as KNN and MICE in order to get the most out of your missing data!
+
+
+
+
+
