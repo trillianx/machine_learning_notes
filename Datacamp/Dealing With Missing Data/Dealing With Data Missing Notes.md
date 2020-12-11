@@ -429,7 +429,13 @@ diabetes_MICE.iloc[:, :] = MICE_imputer.fit_transform(diabetes_MICE)
 
 ### Imputing Categorical Values
 
-So far we have imputed numerical values. However, we can do imputation on categorical values too. But we need to first encode the categorical values before they can be imputed. We make use of *one-hot-encoding* to convert categorical to numerical values or use *ordinal encoder*. Next, we impute the NaN value with the "most frequent category". 
+So far we have imputed numerical values. However, we can do imputation on categorical values too. Here are the steps followed to achieve that: 
+
+1.  Convert non-missing categorical columns to ordinal values
+2.  Impute the missing values in the ordinal DataFrame
+3.  Convert back from ordinal values to categorical values
+
+So, first encode the categorical values before they can be imputed. We make use of *one-hot-encoding* to convert categorical to numerical values or use *ordinal encoder*. Next, we impute the NaN value with the "most frequent category". 
 
 ```python
 from sklearn.preprocessing import OrdinalEncoder
@@ -444,9 +450,48 @@ reshaped_vals = ambience_not_null.values.reshape(-1,1)
 
 # Encode the non-null values of ambience
 encoded_vals = ambience_ord_enc.fit_transform(reshaped_vals)
+
+# Replace the ambience column with ordinal values
+users.loc[ambience.notnull(), 'ambience'] = np.squeeze(encoded_vals)
 ```
 
+Once we have done this, we pass it through the KNN: 
 
+```python
+users_KNN_imputed = users.copy(deep=True)
 
+KNN_imputer = KNN()
 
+users_KNN_imputed.iloc[:, :] = np.round(KNN_imputer.fit_transform(imputed))
 
+for col in imputed:
+    reshaped_col = imputed[col].values.reshape(-1, 1)
+    users_KNN_imputed[col] = ordinal_enc[col].inverse_transform(reshaped_col)
+```
+
+### Evaluation of Different Imputation Technique
+
+In general, imputations are used to improve model performance. Therefore, the machine learning model that gets the best performance is selected as the model to impute. The quality of the imputation can also be checked my plotting the density distribution of the data. Model that enhances the density of the distribution without modifying the shape is a good model. Finally, it is important to check for bias in imputation. 
+
+In this example, we will use the linear model to evaluate the imputation result. This will be our baseline model. 
+
+```python
+import statsmodels.api as sm
+
+diabetes_cc = diabetes.dropna(how='any')
+X = sm.add_constant(diabetes_cc.iloc[:, :-1])
+y = diabetes_cc['Class']
+lm = sm.OLS(y, X).fit()
+```
+
+The summary shows us how good the model is. Next, we fit the linear model to different imputed data frames: 
+
+![image-20201211152325559](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211152325559.png)
+
+We can then check the R-squared values for each of the imputation technique to evaluate which model is the best model. 
+
+Here's an example of density plots for each of the imputation techniques: 
+
+![image-20201211152623277](Dealing%20With%20Data%20Missing%20Notes.assets/image-20201211152623277.png)
+
+We find that the mean imputation (blue) is quite out of shape from the rest, suggesting a bad imputation. The rest seem to look close to the baseline (red). 
