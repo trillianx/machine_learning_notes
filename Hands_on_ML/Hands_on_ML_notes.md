@@ -160,3 +160,223 @@ The cross-validation is a technique in which a dataset is broken into $k$ groups
 
 
 
+## Chapter 2: End-to-End Machine Learning Project 
+
+In this chapter we will go through a project from the beginning to the end. This will illustrate how a typical machine learning project works in practice.
+
+Here are the main steps to follow when working on a ML project: 
+
+1.  Look at the big picture
+2.  Get the data
+3.  Discover and Visualize the data to gain insights
+4.  Prepare data for ML algorithms
+5.  Select a model and train it
+6.  Fine-tune your model
+7.  Present your solution
+8.  Launch, monitor, and maintain your system
+
+As an example to go through these steps, we will look at the housing prices. 
+
+### Look at the Big Picture
+
+We are given a data of California housing prices. The data contains population, median income, median housing price for each block and other geographical information. **Our goal is to predict the median housing price in any district given all the other metrics.** 
+
+Before we launch into building a model, we need to ask our manager or boss about how this model is going to be used. Is this a stand-alone model or would this be part of a pipeline. We also need to know how accurate this model should be. How critical is the accuracy of the model and how would the prediction from the model be used. All these questions help us decide how we build and test the model. 
+
+We find out that our model is just a piece in the company's pipeline. It would look something like this: 
+
+<img src="Hands_on_ML_notes.assets/image-20210127140738743.png" alt="image-20210127140738743" style="zoom:100%;" />
+
+>   A sequence of data processing components is called a **data pipeline**. 
+
+We have been asked to make predictions on the housing prices at a given location. So, we are looking at a numerical output. So, this is a regression problem as opposed to a classification problem. We know that there are a lot of features that we will use to make the prediction so this is a multivariate problem. So, this is a **multivariate regression problem**. We also know that we have labeled data. So we will be working with a **supervised learning** ML system. 
+
+Next, we find that the data are small enough to fit in memory. So, we are looking at batch learning as opposed to online learning. 
+
+>   If the data are large, you can break it up using MapReduce technique, and then use the batch learning method. 
+
+#### Select Performance Measure
+
+Now that we know the type of ML system to use, we need to decide what metric we should use to evaluate the model performance. Knowing that this is a regression problem, the typical metric to use the **Root Mean Square Error (RMSE)**. The RMSE is given by: 
+
+![image-20210127141627183](Hands_on_ML_notes.assets/image-20210127141627183.png)
+
+Here the $\bold{X}$ is the feature matrix and $h$ is the prediction matrix ($h = \hat{y}^{(i)} = h(\bold{x}^{(i)})$). The other $y^{(i)}$ is the target or the label for a given sample $i$, while $m$ are the total number of samples or observations. 
+
+Ofen in linear regresssion we use the **mean absolute error (MAE)** instead as it is robust against outliers. The MAE is given by, 
+
+![image-20210127142149792](Hands_on_ML_notes.assets/image-20210127142149792.png) 
+
+Both RMSE and MAE are ways to measure the distance between two vectors: the vector of predictions and the vector of target values. 
+
+#### Check the Assumptions
+
+When working with any ML system, it is important to know what the assumptions are. There are two types of assumptions that we make:
+
+1.  Assumptions involving the ML system. Each ML algorithm requires the data to be in certain type and format. We need to ensure that the assumptions are satisfied. If not, we will get erroneous decision. We will work on this when we prepare the data for ML algorithms. 
+2.  Assumptions regarding what the format of the output of the ML system is and how it is going to be used. We find that the downstream system takes in actual prices and not the price categories. 
+
+### Getting the Data
+
+When working on a project, it is important to create a new environment so that other projects are not affected. So, we begin by creating an environment:
+
+```python
+python3 -m pip3 install --user --U virtualenv
+virtualenv my_env
+source my_env/bin/activate
+```
+
+We then install all python packages in that environment. 
+
+#### Take a Quick Look at the Data Structure
+
+We can do a quick EDA to see how the data looks like. This includes:
+
+*    Use of `.head()` to see the data structure
+*   Use of of `.info()` to find which features have null values
+*   Use of `.value_counts()` to find the categories in a categorical variable
+*   Use of `.describe()` to see the descriptive statistics of numerical features
+*   Use of `.hist()` to see the distribution of numerical values
+
+#### Creating a Test Set
+
+Now that we know how the data looks like. We first start with a test set. This is important because we do not want to create a test data after we have done EDA on the data. We do not want to be biased by it. 
+
+The test split is creating using the scikit-learn algorithm `train_test_split()`:
+
+```python
+from sklearn.model_selection import train_test_split
+train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
+```
+
+The above function randomly selects samples from the `housing` dataset and assigns 20% to test and the remaining to the train. However, there are times when you want to preserve the distribution of features of the original dataset within both the train and test. In such a case, we will do a **stratefied sampling**:
+
+```python
+from sklearn.model_selection import StratifiedShuffleSplit
+strat_splits = StratifiedShuffleSplit(n_split = 1, 
+            	                  test_size=0.2,
+                	              random_state=42)
+for train_index, test_index in strat_splits.split(housing, 
+                                                  housing['income_category']):
+    strat_train_set = housing.loc[train_index]
+    strat_test_set = housing.loc[test_index]
+
+# Finally we remove the `income_cat` attribute: 
+for set_ in (strat_train_set, strat_test_set):
+    set_.drop('income_cat', axis=1, inplace=True)
+```
+
+### Discover & Visualize the Data to Gain Insights
+
+To gain insights into the data, we begin by creating multiple plots. 
+
+#### Visualize the Data
+
+Here we begin by plotting the data. 
+
+```python
+housing.plot(kind='scatter', x='longitude', y='latitude')
+```
+
+![image-20210127145720173](Hands_on_ML_notes.assets/image-20210127145720173.png)
+
+We can also create a heatmap to see where the housing prices are high. These would be expensive places: 
+
+```python
+housing.plot(kind="scatter", x="longitude", y="latitude", alpha=0.4,
+    s=housing["population"]/100, label="population", figsize=(10,7),
+    c="median_house_value", cmap=plt.get_cmap("jet"), colorbar=True,)
+plt.legend()
+```
+
+The result is the following: 
+
+![image-20210127145855954](Hands_on_ML_notes.assets/image-20210127145855954.png)
+
+We see that the housing prices are very high next to the coast but much cheaper inland, as expected. 
+
+#### Looking for Correlation
+
+If the data is not too large, we can create correlation matrix. 
+
+```python
+corr_matrix = housing.corr()
+```
+
+Lookinag at this matrix, for one of the variable, `median_housing_value`, we find:
+
+```python
+print(corr_matrix["median_house_value"].sort_values(ascending=False))
+
+median_house_value    1.000000
+median_income         0.687170
+total_rooms           0.135231
+housing_median_age    0.114220
+households            0.064702
+total_bedrooms        0.047865
+population           -0.026699
+longitude            -0.047279
+latitude             -0.142826
+Name: median_house_value, dtype: float64”
+
+```
+
+ We notice that `median_income` is high correlated with `median_house_value`. The other features are less so. Some are weakly anticorrelated. 
+
+We can also plot some correlations as well, 
+
+```python
+from pandas.plotting import scatter_matrix
+
+attributes = ["median_house_value", "median_income", "total_rooms",
+              "housing_median_age"]
+scatter_matrix(housing[attributes], figsize=(12, 8))
+```
+
+![image-20210127150351943](Hands_on_ML_notes.assets/image-20210127150351943.png)
+
+We see that some are strongly correlated but we notice something vety interesting: 
+
+![image-20210127150428843](Hands_on_ML_notes.assets/image-20210127150428843.png)
+
+Notice some data are exactly at 500000. This is most likely due to a capping of the data. We may need to remove some district that have these values capped to prevent the algorithm from learning to reproduce these data quirks. 
+
+#### Working with Attribute Combinations
+
+You will notice that some distributions are tail heavy. We may need to transform them so that the distributions are normal. This is important because the multiple linear regression assumes that the attributes are normally distributed. This is where our assumptions about the ML system comes into picture. 
+
+You also want to explore the features to see if there are features that can be removed or which can be modified. We have a total number of rooms per district, which is not quite helpful. Instead, we want total number of rooms per household. Also, the total number of bedrooms are not useful. Instead, we want the total number of bedrooms in terms of the total number of rooms. We make this change
+
+```python
+housing["rooms_per_household"] = housing["total_rooms"]/housing["households"]
+housing["bedrooms_per_room"] = housing["total_bedrooms"]/housing["total_rooms"]
+housing["population_per_household"]=housing["population"]/housing["households"]
+```
+
+Looking at the correlation matrix for `median_house_value`, we find the following: 
+
+```python
+“corr_matrix = housing.corr()
+print(corr_matrix["median_house_value"].sort_values(ascending=False))
+
+median_house_value          1.000000
+median_income               0.687160
+rooms_per_household         0.146285
+total_rooms                 0.135097
+housing_median_age          0.114110
+households                  0.064506
+total_bedrooms              0.047689
+population_per_household   -0.021985
+population                 -0.026920
+longitude                  -0.047432
+latitude                   -0.142724
+bedrooms_per_room          -0.259984
+Name: median_house_value, dtype: float64
+```
+
+We see that `rooms_per_household` is much more correlated with `median_house_value` rather simply the `total_rooms`. We also see that `bedrooms_per_room` is strongly anti correlated than simply `total_bedrooms`. 
+
+>   The round of exploration does not have to be rigorous, instead it should be just enough to get started. 
+
+### Prepare Data for ML Algorithms
+
