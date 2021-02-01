@@ -1,3 +1,5 @@
+[TOC]
+
 
 
 # ML From Scratch
@@ -46,7 +48,16 @@ def train_test_split(X, y, test_size, random_state=-1):
 
 
 
+## K-Nearest Neighbors
 
+**Concept**: The k-NN is an instance-based algorithm. It does no learning, instead it uses **euclidean distance** to compute k-nearest neighbors to an observation with unknown label. It then finds the labels of these k-nearest neighbors and assigns the label of the unknown observation based on majority rule. 
+
+**Actual**: To write the k-NN class, we need the following: 
+
+*   The fit method
+*   We need a predict method
+
+**The Code**
 
 ## Decision Tree
 

@@ -380,3 +380,201 @@ We see that `rooms_per_household` is much more correlated with `median_house_val
 
 ### Prepare Data for ML Algorithms
 
+The data preparation should be written as a pipeline rather than doing it manually. So, it is important to write functions instead. Such functions can then be used in future projects. 
+
+#### Data Cleaning
+
+As we saw earlier, our feature `total_bedrooms` has some missing values. We can either drop rows that have missing values, we can drop the feature entirely, or we can impute the missing values. 
+
+We will use the impute method to impute the missing values. Here's how it is done: 
+
+```python
+from sklearn.impute import SimpleImputer
+imputer = SimpleImputer(strategy='median')
+```
+
+Now the imputer requires that the dataframe be purely numerical. So, we will get rid of all categorical features and then pass this to the imputer: 
+
+```python
+housing_num = housing.drop('ocean_proximity', axis=1)
+```
+
+Now we are ready to impute: 
+
+```python
+imputer.fit(housing_num)
+X = imputer.transform(housing_num)
+```
+
+This gives is X, which is a numpy ndarray. We can put this back into a dataframe: 
+
+```python
+housing_tr = pd.DataFrame(X, columns=housing_num.columns, index=housing_num.index)
+```
+
+This takes care of all missing values across features. We have simply used a median value of that feature to be imputed. 
+
+#### Handling Text & Categorical Attributes
+
+For ML systems to use the data, the categorical features need to be numeric. Therefore, we need to transform them. The most common way to convert is to use `OneHotEncoder`:
+
+```python
+from sklearn.preprocessing import OneHotEncoder
+cat_encoder = OneHotEncoder()
+housing_cat = cat_encoder.fit_transform(housing_cat)
+```
+
+>   The drawback of OneHotEncoding is that the resultant matrix is a sparse matrix. If this is the case, you should think about transforming the categorical feature into a numerical feature. For example, rather than using `ocean_proximity` as a categorical feature, you can use a distance measure from the ocean as a feature. Alternatively, you could replace each category with a learnable, low-dimensional vector called **embedding**. We will see this Chapter 13 and 17. 
+
+#### Feature Scaling
+
+
+
+## Chapter 3: Classification
+
+We will begin our exploration of ML algorithms with classification. As an example, we will use the **MNIST** dataset. It has a set of 70,000 small images of digits that were written by highschool students. 
+
+Scikit-learn provides this dataset: 
+
+```python
+from sklearn.datasets import fetch_openml
+mnist = fetch_openml('mnist_784', version=1)
+
+# Get the X and y vectors
+X, y = mnist['data'], mnist['target']
+```
+
+We can see their shapes: 
+
+```python
+print(X.shape)
+print(y.shape)
+```
+
+```python
+(70000, 784)
+(70000,)
+```
+
+We see that there are 70,000 images and each image has `28 x 28` pixels, which amount to 784 features. 
+
+Here's how the MNIST dataset looks like: 
+
+<img src="Hands_on_ML_notes.assets/image-20210201101654656.png" alt="image-20210201101654656" style="zoom:80%;" />
+
+Now let's split the dataset and get started with classification: 
+
+```python
+X_train, X_test, y_train, y_test = X[:60000], X[60000:], y[:60000], y[60000:]
+```
+
+### Binary Classifier
+
+We will start with a very simple classifier. It is a binary classifier, in the sense the number we are looking at, say 5, is either true or false. For this we will use the **Stochastic Gradient Descent** classifier. The advantage of SGD is that it can easily handle very large datasets efficiently. This is because SGD deals with instances rather than large batches of data. Think of it as online learning vs batch learning. 
+
+To make things easier, we will create a binary classifier that evaluate whether an image has a '5' in it or not. So, we will train the classifier on all the images of 5: 
+
+```python
+y_train_5 = (y_train == '5')
+y_test_5 = (y_test == '5')
+```
+
+This creates our labels, which are booleans. Now we train the classifier:
+
+```python
+from sklearn.linear_model import SGDClassifier
+sgd_clf = SGDClassifier(random_state=42)
+sgd_clf.fit(X_train, y_train_5)
+```
+
+Looking ath `y_test_5`, we know that the last two digits are False. 
+
+```python
+for index in [998, 999]:
+    single_sample = X_test.iloc[index].values.reshape(1, -1)
+    print(sgd_clf.predict(single_sample))
+```
+
+And we get: 
+
+```python
+[False]
+[False]
+```
+
+This is rather painful way of evaluating the classifier. Let's automate the process. 
+
+#### Evaluating the Classifier
+
+We will implement cross-validation to evaluate the classifier. 
+
+```python
+from sklearn.model_selection import cross_val_score
+cross_val_score(sgd_clf, X_train, y_train, cv=5, scoring='accuracy')
+```
+
+Here we have done a k-fold cross validation with `k=5`. The result is the following: 
+
+```python
+array([0.88083333, 0.88325   , 0.88116667, 0.86625   , 0.8875    ])
+```
+
+We see that the accuracy on average is greater than 88%. Now before we get excited about the result, we should know that only 10% of the images are that of '5', so any dumb classifier will get over 90% of accuracy. **This suggests that accuracy is generally not the preferred performance measure for classifiers**, especially when the datasets are skewed. 
+
+#### Confusion Matrix
+
+A much better way to evalute the performance of a classifier is to use the confusion matrix. Given two classes A and B, the confusion matrix counts the number of times the classifier has: 
+
+*   Correctly classifier numbers belonging to class A 
+*   Correctly classified the number belonging to class B
+*   Incorrectly classified the number belonging to class A
+*   Incorrectly classified the number belonging to class B
+
+Here's how we setup our confusion matrix: 
+
+```python
+from sklearn.model_selection import cross_val_predict
+
+y_train_pred = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3)
+```
+
+Just like `cross_val_score()`, the `cross_val_predict()` makes k-fold cross-validation but rather than returning the scores, it returns the predictions on each test fold. 
+
+Now we are ready to construct our confusion matrix: 
+
+```python
+from sklearn.metrics import confusion_matrix
+confusion_matrix(y_train_5, y_train_pred)
+```
+
+The output is the following: 
+
+```python
+array([[53892,   687],
+       [ 1891,  3530]])
+```
+
+Few things to know about confusion matrix as we see above: 
+
+*   Each row corresponds to the actual class
+*   Each column corresponds to predicted class. 
+
+>   In a confusion matrix, we want higher numbers along the diagonal and smaller numbers along the off-diagonal for the classifier to be good. A perfect classifier will have 0 values in its off-diagonal
+
+The confusion matrix gives us a lot of information but we may be interested in a summary of the result, a more concise metric. There are two such metrics that are often used to evaluate accuracy of a classifier. But before we go into the metrics, let's use some definitions: 
+
+*   **True Positive (TP)** - Observations that are correctly predicted to belong to the positive class. 
+*   **True Negative (TN)** - Observations that are correctly predicted to belong to the negative class
+*   **False Positive (FP)** - Observations that actually belong to the negative class but are predicted to belong to the positive class
+*   **False Negative (FN)** - Observations that actually belong to the positive class but are predicted to belong to the negative class. 
+
+With these definitions, let's look at some metrics that are often used to evalutate a classifier: 
+
+*   **Precision** - This is the ratio of the total number of observation that were predicted correctly to be positive over the total number of observations predicted to be positive class (TP + FP). 
+    $$
+    \text{precision} = \frac{TP}{TP + FP}
+    $$
+    The drawback of using only precision is that if we make one prediction and it is correct, we get a 100% precision. Therefore, precision is used along another metric. 
+
+*   **Recall** - This is the ratio of the total number of observatiosn that are predicted to correctly to be positive over the total number of actual observations that belong to the positive class (TP + FN) 
+
