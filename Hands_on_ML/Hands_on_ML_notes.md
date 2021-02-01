@@ -568,6 +568,10 @@ The confusion matrix gives us a lot of information but we may be interested in a
 *   **False Positive (FP)** - Observations that actually belong to the negative class but are predicted to belong to the positive class
 *   **False Negative (FN)** - Observations that actually belong to the positive class but are predicted to belong to the negative class. 
 
+Here's an example to look at: 
+
+<img src="Hands_on_ML_notes.assets/image-20210201114308553.png" alt="image-20210201114308553" style="zoom:150%;" />
+
 With these definitions, let's look at some metrics that are often used to evalutate a classifier: 
 
 *   **Precision** - This is the ratio of the total number of observation that were predicted correctly to be positive over the total number of observations predicted to be positive class (TP + FP). 
@@ -576,5 +580,173 @@ With these definitions, let's look at some metrics that are often used to evalut
     $$
     The drawback of using only precision is that if we make one prediction and it is correct, we get a 100% precision. Therefore, precision is used along another metric. 
 
-*   **Recall** - This is the ratio of the total number of observatiosn that are predicted to correctly to be positive over the total number of actual observations that belong to the positive class (TP + FN) 
+*   **Recall** - This is the ratio of the total number of observations that are predicted correctly to be positive over the total number of actual observations that belong to the positive class (TP + FN) 
+    $$
+    \text{recall} = \frac{TP}{TP + FN}
+    $$
+    
+
+*   **F1-score** - The F1-score is the harmonic mean of precision and recall. F1-score is particularly useful to compare two or more classifiers. The difference between mean and harmonic mean is that the latter gives more weight to low values. As a result, the classifier will only get a high F1-score if both recall and precision are high.
+
+    $$
+    F_1\text{ score} = 2 \times \frac{precision \times recall}{precision + recall}
+    $$
+
+Here is how you can do that in sklearn: 
+
+```python
+from sklearn.metrics import precision_score, recall_score, f1_score
+
+print("Precision: ", np.round(precision_score(y_train_5, y_train_pred),2))
+print("Recall: ", np.round(recall_score(y_train_5, y_train_pred),2))
+print("F1-score: ", np.round(f1_score(y_train_5, y_train_pred),2))
+```
+
+And here is the result: 
+
+```python
+Precision:  0.84
+Recall:     0.65
+F1-score:   0.73
+```
+
+>    The F1-score favors classifiers that have similar precision and recall
+
+There are cases when this is not something we would want. In some cases, you may want higher precision while in other cases, you may want higher recall. Let's think of precision and recall in terms of a car alarm. We are in a bad neighborhood, so we get an alarm in our car in order to prevent it from a carjack. 
+
+*   **When Precision Matters** - What does it mean to have high precision? We can get high precision, if the **False Positives** are smaller. Fewer False positives mean that few number of times the alarm rings when car is shaken by the wind or if a large truck passes close-by. 
+*   **When Recall Matters** - What does it mean to have high recall? We can get high recall if the **False Negatives** are smaller. Few False negatives mean that a carjack happens when the alarm does not ring. 
+
+This all boils down to **sensitivity** of our alarm. If we make the alarm less sensitive, we will have less of false positives but it will increase false negatives. In other words, we will not have the alarm go off every now and then, but we risk on it not going off when the carjack happens. On the other hand, if we increase the sensitivity, we will definitely catch the thief but we are also likely to have the alarm go off more times. 
+
+Unfortunately, we cannot have high precision and high recall. This is because increasing precision reduces recall and vice versa. This is known as **precision-recall trade-off**
+
+#### Precision/Recall Trade-off
+
+A classifier makes use of a decision boundary. Based on where the observation is, in terms of the decision boundary, the classifier assigns it to one or the other class. For example, the images are ranked by the classifier score as follows: 
+
+<img src="Hands_on_ML_notes.assets/image-20210201133600845.png" alt="image-20210201133600845" style="zoom:150%;" />
+
+We have three positions of a decision boundary. Based on where the boundary is, we may have higher precision or higher recall. 
+
+sklearn does not let you set the threshold or the decision boundary explicitly but gives you access to the decision scores that it uses to make predictions. Rather than using `.predict()`, if you used, `.decision_function()` method, you will get the score for that instance. 
+
+```python
+single_sample = X_test.iloc[996].values.reshape(1, -1)
+sgd_clf.decision_function(single_sample)
+
+array([-7861.86923293])
+```
+
+We see that the value is lot negative then if we used another value: 
+
+```python
+single_sample = X_test.iloc[999].values.reshape(1, -1)
+sgd_clf.decision_function(single_sample)
+
+array([-5838.15108052])
+```
+
+This is indicative that the decision boundary is set to zero. 
+
+#### Setting up a Threshold
+
+So, how do we decide what threshold to use? We follow these steps: 
+
+1.  We get decision scores of all instances in our training set
+2.  We use a `precision_recall_curve()` to compute precision and recall values for all possible thresholds or decision boundaries and not just at zero. 
+3.  We plot the result. 
+
+```python
+# Get decision scores for all instances
+y_scores = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3, 
+                            method='decision_function')
+
+# Get precision and recall values for all thresholds
+from sklearn.metrics import precision_recall_curve
+precisions, recalls, thresholds = precision_recall_curve(y_train_5, y_scores)
+
+# Plot to view the curves
+plt.plot(thresholds, precisions[:-1], "b--", label="Precision")
+plt.plot(thresholds, recalls[:-1], "g-", label="Recall")
+plt.legend()
+plt.ylabel('Score')
+plt.xlabel('Threshold')
+```
+
+<img src="Hands_on_ML_notes.assets/image-20210201135358885.png" alt="image-20210201135358885" style="zoom:150%;" />
+
+For a given decision boundary (red) we can get the precision and recall scores. 
+
+>   The precision curve is bumpier than recall curve. This happens because precision can go down even when the threshold is increased. Notice that the precision goes down when we move our threshold in the above numbers image when we go right. However, the recall will always increase or decrease. 
+
+#### Precision - Recall Curve 
+
+We could select a good precision recall value by simply plotting a recall and precision curve. 
+
+```python
+plt.plot(recalls, precisions)
+plt.ylabel('Precision')
+plt.xlabel('Recall')
+```
+
+<img src="Hands_on_ML_notes.assets/image-20210201140043691.png" alt="image-20210201140043691" style="zoom:100%;" />
+
+If we want a 90% precision, we need to have a recall of about 40%. Ignore the bump, we see that if we wish to have a precision of 99%, our recall will be 5% or so. 
+
+#### ROC Curve
+
+The **Receiver Operating Characteristic (ROC)** curve is another common tool used for binary classifiers. Rather than using precision, we use  **true positive rate** (also known as **recall**) and **false positive rate**. The false positive rate is defined as `1 - True Negative Rate`. The TNR is the ratio of negative instances that are correctly classified as negative. The TNR is also called **specificity**. 
+
+```python
+from sklearn.metrics import roc_curve
+fpr, tpr, thresholds = roc_curve(y_train_5, y_scores)
+
+plt.plot(fpr, tpr, linewidth=2)
+plt.plot([0,1],[0,1], 'k--')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+```
+
+![image-20210201140904279](Hands_on_ML_notes.assets/image-20210201140904279.png)
+
+We see again a trade-off. Higher the recall value (TPR), the higher will be the False Positive Rate. 
+
+The False positive rate is calculated as, 
+$$
+\text{False Positive Rate} = \frac{FP}{FP + TN}
+$$
+
+>   The false positive rate is the probability that the true event will be missed by the test. In other words, the FPR is the probability of falsely rejecting the null hypothesis (i.e. making a Type I error). 
+
+#### Area Under the Curve (AUC)
+
+The ROC allows you to compare classifiers graphically. Rather than graphical representations, we can simply compute the area under the curve of the ROC. The closer the AUC is to 1, the better the classifier. 
+
+```python
+from sklearn.metrics import roc_auc_score
+auc_score = roc_auc_score(y_train_5, y_scores)
+print(np.round(auc_score, 2))
+```
+
+We get a score of 0.96 or 96%. 
+
+#### When to Use which Curve
+
+*   Use the Precision Recall Curve whenever the positive class is rare or when you care more about the FP than the FN. 
+*   Use the ROC curve otherwise
+
+### Random Forest Classifier
+
+Let's try using the Random Forest classifier for our problem. Note that Random Forest classifier does not have a `decision_function()` but has a `predict_proba()` method. 
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+
+forest_clf = RandomForestClassifier(random_state=42)
+y_probas_forest = cross_val_predict(forest_clf, X_train, y_train_5, cv=3,
+                                   method='predict_proba')
+```
+
+
 
