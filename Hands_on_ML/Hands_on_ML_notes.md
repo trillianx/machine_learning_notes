@@ -1086,3 +1086,73 @@ Here we see that the minimum is reached just after 100 iterations. So, there is 
 
 ### Stochastic Gradient Descent
 
+The downside of batch gradient descent is that it uses the whole of data when computing the gradient at each step. Stochastic Gradient Descent (SGD) picks a random instance in the training set at every step and computes the gradients based only on that single instance. 
+
+Here are few notes about SGD: 
+
+*   SGD is less regular than BGD due to its randomness. It will bounce up and down, decreasing only on average. Over time it will end up to the minimum. 
+*   The randomness allows SGD to move out of local minima and reach the global minima. 
+*   Because of its randomness, we setup a dynamic learning rate. The learning rate starts large but gets smaller as the SGD approaches the minima. This also allows for it to settle on the minimum value. 
+
+Here is the SGD implementation: 
+
+```python
+n_epochs = 50
+t0, t1 = 5, 50
+
+def learning_schedule(t):
+    return t0/(t + t1)
+
+theta = np.random.randn(2, 1)
+
+for epoch in range(n_epochs):
+    for i in range(m):
+        random_index = np.random.randint(m)
+        xi = X_b[random_index:random_index+1]
+        yi = y[random_index:random_index+1]
+        gradients = 2/m * xi.T.dot(xi.dot(theta) - yi)
+        eta = learning_schedule(epoch * m + i)
+        theta = theta - eta * gradients
+```
+
+Here, for every epoch, we iterate through each sample at a time. 
+
+The figure below shows how the first 100 values of intercept and slope and computed by SGD:
+
+```python
+n_epochs = 50
+t0, t1 = 5, 50
+
+def learning_schedule(t):
+    return t0/(t + t1)
+
+theta = np.random.randn(2, 1)
+eta_list = []
+gradients_list = []
+for epoch in range(n_epochs):
+    for i in range(m):
+        random_index = np.random.randint(m)
+        xi = X_b[random_index:random_index+1]
+        yi = y[random_index:random_index+1]
+        gradients = 2/m * xi.T.dot(xi.dot(theta) - yi)
+        gradients_list.append(gradients)
+        eta = learning_schedule(epoch * m + i)
+        eta_list.append(eta)
+        theta = theta - eta * gradients
+
+
+x = list(range(5000))
+intercepts = [gradients_list[i][0][0] for i in range(5000)]
+slope = [gradients_list[i][1][0] for i in range(5000)]
+
+plt.plot(x[:100], intercepts[:100], marker='o', ls=':', label='intercept')
+plt.plot(x[:100], slope[:100], marker='o', ls=":", alpha=0.5, label='slope')
+plt.legend()
+```
+
+<img src="Hands_on_ML_notes.assets/image-20210202120313683.png" alt="image-20210202120313683" style="zoom:80%;" />
+
+We see how the gradient evetually converges to zero: 
+
+<img src="Hands_on_ML_notes.assets/image-20210202120624096.png" alt="image-20210202120624096" style="zoom:80%;" />
+
