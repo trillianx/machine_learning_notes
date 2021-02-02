@@ -832,29 +832,257 @@ Next we use the matplotlib's `matshow()` to plot the confusion matrix:
 row_sums = conf_mx.sum(axis=1, keepdims=True)
 norm_conf_mx = conf_mx / row_sums
 
-np.filll_diagonal(norm_conf_mx, 0)
-plt.matshow(norm_conf_mx, cmap=plt.cm.gray)
+np.fill_diagonal(norm_conf_mx, 0)
+plt.matshow(norm_conf_mx, cmap=plt.cm.Blues)
 ```
 
 The result is the following: 
 
-<img src="Hands_on_ML_notes.assets/image-20210201174352031.png" alt="image-20210201174352031" style="zoom:80%;" />
+<img src="Hands_on_ML_notes.assets/image-20210201180047290.png" alt="image-20210201180047290" style="zoom:50%;" />
 
-Remember that the rows are actual while the columns are predicted. 
+Remember that the rows are actual while the columns are predicted. We see that the all numbers seem to be predicted correctly except the number '8'. We also see that '3' and '5' also seem to show low correct predictions. This suggests that the classifier has problems working with 3, 5, and 8. This is clearly visible when looking at the images: 
 
+<img src="Hands_on_ML_notes.assets/image-20210201175447695.png" alt="image-20210201175447695" style="zoom:50%;" />
 
+We can see how the classifier can get confused. This can be solved by preprocessing the images that cause the problem. 
 
 ### Multilabel Classification
 
+So far we have seen cases where each observation is associated with one label. However, there are cases when a single observation can correspond to more than one label. For example, a photo is one instance, or one sample but it can have many people in it, which corresponds to multiple labels. 
 
+Let's take an example. 
 
+```python
+y_train_large = (y_train >= 7)
+y_train_odd = (y_train % 2 == 1)
 
+# Creating a multilabel: 
+y_multilabel = np.c_[y_train_large, y_train_odd]
+```
 
+We have now created two labels: **large** and **odd**. Note that some instances can be both, odd and large. So, such instances now correspond to two labels. 
 
+Let's train this using a kNN classifier: 
+
+```python
+from sklearn.neighbors import KNeighborsClassifier
+knn_clf = KNeighborsClassifier()
+knn_clf.fit(X_train, y_multilabel)
+```
+
+Now we can use an example to make predictions. 
 
 ### Multioutput Classification
 
+This is just a generalization of what we have learned so far. The multioutput classification is a multlabel classification where each label can be multi class. 
 
 
 
+## Chapter 4:  Training Models
+
+So far we have used various ML models without really understanding how the algorithms work. We can get a lot done by treating the algorithms as a black box. However, by knowing the ins and outs of an algorithm, you are better equipped to deal with error analysis. Therefore, we will go through a series of algorithms in this chapter. 
+
+We will start by looking at the most simple algorithm, the linear regression model. There are two different ways to train a linear regression model: 
+
+*   **Using a closed-form** which computes the model parameters by optimizing the cost function over the training set. 
+*   **Using an iterative optimization** approach called **Gradient Descent (GD)** that gradually tweaks the model parameters to minimize the cost function over the training set. 
+
+### Linear Regression
+
+A linear regression model is a weighted sum of the input features, plus a constant called the **bias term**. The bias term is also known as the **intercept**. The general form of the linear regression model is, 
+
+<img src="Hands_on_ML_notes.assets/image-20210202100734618.png" alt="image-20210202100734618" style="zoom:150%;" />
+
+where: 
+
+*   $\hat{y}$ is the predicted value
+*   $n$ are the number of features
+*   $x_i$ is the $i^{th}$ feature value
+*   $\theta_j$ is the $j^{th}$ model parameter. These are the feature weights
+*   $\theta_0$ is the bias term
+
+The above equation can be vectorized as, 
+
+<img src="Hands_on_ML_notes.assets/image-20210202101016937.png" alt="image-20210202101016937" style="zoom:200%;" />
+
+Where the prediction is a **dot product** of the feature weights vector and the feature vector.  It is to be noted that the prediction is an instance prediction derived from the feature weights and instance feature vector. Each observation or an instance, is a feature vector.
+
+>   In ML, vectors are often represented as column vectors, which is a 2D arrays with a single column. So, the above equation is technically a dot product of $\bold{\theta^T}$ and $\bold{x}$. The transpose makes the feature weights a row vector while the feature vector remains a column vector. We can then do a dot product. 
+
+To train the model, we need to define a metric. The idea metric that is used is the **Mean Squared Error (MSE)** . The MSE is defined as, 
+
+<img src="Hands_on_ML_notes.assets/image-20210202101817434.png" alt="image-20210202101817434" style="zoom:150%;" />
+
+where $m$ are the number of instances in the dataset. The notation: 
+$$
+h_{\theta} = \hat{y} = \bold{\theta^T}\bold{x^{(i)}}
+$$
+To find the values of the feature weights vector, we simply multiply $x^T$ on either side of the above equation. As $\bold{x^Tx} = 1$, we have: 
+
+<img src="Hands_on_ML_notes.assets/image-20210202102352901.png" alt="image-20210202102352901" style="zoom:150%;" />
+
+This is known as the **closed-form** as we can find an exact solution to the values of $\theta$. The above equation is called the **normal equation**. 
+
+Let's test this assumption by creating a dummy data: 
+
+```python
+X = 2 * np.random.rand(100, 1)
+y = 4 + 3 * X + np.random.randn(100, 1)
+plt.plot(X, y, marker='o', ls='')
+```
+
+<img src="Hands_on_ML_notes.assets/image-20210202102820577.png" alt="image-20210202102820577" style="zoom:80%;" />
+
+Now we find the normal equation. 
+
+```python
+# We add a 1 as our intercept first
+X_b = np.c_[np.ones((100, 1)), X]
+
+# Compute theta
+theta_hat = np.linalg.inv(X_b.T.dot(X_b)).dot(X_b.T).dot(y)
+```
+
+The `X_b` looks something like this: 
+
+<img src="Hands_on_ML_notes.assets/image-20210202103156318.png" alt="image-20210202103156318" style="zoom:50%;" />
+
+Let's look at the values of $\theta$:
+
+```python
+print(theta_hat)
+
+array([[4.25509853],
+       [2.75140848]])
+```
+
+This is close the actual vallue of 4 and 3. 
+
+Now we can make prediction for any value of x: 
+
+```python
+X_new = np.array([[0], [2]])
+X_new_b = np.c_[np.ones((2, 1)), X_new]
+
+y_predict = X_new_b.dot(theta_hat)
+print(y_predict)
+
+[[4.25509853]
+ [9.75791549]]
+```
+
+Finally, we can compute each and every value and create a line: 
+
+```python
+y_predict = X_b.dot(theta_hat)
+
+plt.plot(X, y, marker='o', ls='', label='data')
+plt.plot(X_b[:,1], y_predict, ls=':', label='fit')
+plt.legend(loc='upper left')
+```
+
+<img src="Hands_on_ML_notes.assets/image-20210202104345511.png" alt="image-20210202104345511" style="zoom:50%;" />
+
+Rather than doing this manually, we can use the Scikit learn libary and do the same: 
+
+```python
+from sklearn.linear_model import LinearRegression
+lin_reg = LinearRegression()
+lin_reg.fit(X, y)
+print(lin_reg.intercept_, lin_reg.coef_)
+
+[4.25509853] [[2.75140848]]
+```
+
+The normal equation computes the inverse of $X^TX$ which is a $(n+1)(n+1)$ matrix where $n$ is the number of features. The computation complexity is $O(n^3)$ depending on the implementation. In short, greater the number of features, the longer it will take to compute the normal matrix. A better approach when working with large number of features is to use iterative method. 
+
+### Gradient Descent
+
+The general idea behind gradient descent is to tweak parameters iteratively in order to minimize the cost function. The gradient descent function measures the local slope, the local gradient of the cost function with regard to the parameter vector $\theta$ and it moves in the direction of descending gradient. When the gradient is zero, we have reached the minimum of the function. 
+
+Given a cost function, we start from a random position and move towards the minimum value: 
+
+<img src="Hands_on_ML_notes.assets/image-20210202105346105.png" alt="image-20210202105346105" style="zoom:80%;" /> 
+
+The important parameter in Gradient Descent is the size of the steps, determined by the **learning rate** hyperparameter. If the learning rate is too small, the algorithm will take a long time to reach the minimum while if the learning rate is too large, the algorithm may miss the minimum value. 
+
+Now the cost function may not have just one minimum but may have two or more minimum called **local minima** and an absolute minimum, called **global minimum**. There could also be a **plateau** where the gradient may think that it has reached the minimum. In other words, depending on the shape of the cost function, there could be challenges in using the GD. 
+
+<img src="Hands_on_ML_notes.assets/image-20210202105801337.png" alt="image-20210202105801337" style="zoom:80%;" />
+
+Luckily, the MSE for linear regression is a convex function. Therefore, the GD algorithm works well. 
+
+>   When using GD, ensure that all features have similar scale. In other words, use the `StandardScaler` on the features before applying GD, else it will take long time to converge. 
+
+### Batch Gradient Descent
+
+The GD is implemented by computing the gradient of the cost function with regard to each model parameter $\theta_j$. This is done using the partial derivative. Here the following equation computes the gradient with respect to a single model parameter $\theta_j$. 
+
+<img src="Hands_on_ML_notes.assets/image-20210202110828036.png" alt="image-20210202110828036" style="zoom:150%;" />
+
+For all model parameters, we would have: 
+
+<img src="Hands_on_ML_notes.assets/image-20210202110948595.png" alt="image-20210202110948595" style="zoom:150%;" />
+
+>   The calculation of the gradient for each model parameter requires the use of all of the data! This makes the gradient descent slower if the data are large. 
+
+The gradient vector points uphill so we just use a negative value to point downhill. At each step, we change the model parameter by subtracting the gradient. Thus, we have: 
+
+<img src="Hands_on_ML_notes.assets/image-20210202111311386.png" alt="image-20210202111311386" style="zoom:150%;" />
+
+Here's the implementation of GD: 
+
+```python
+eta = 0.1
+n_iterations = 1000
+m = 100
+
+# Start with a random initial value of theta
+theta = np.random.randn(2, 1)
+
+for iteration in range(n_iterations):
+    gradients = 2/m * X_b.T.dot(X_b.dot(theta) - y)
+    theta = theta - eta * gradients
+```
+
+The value of theta comes out to be: 
+
+```python
+array([[4.25509853],
+       [2.75140848]])
+```
+
+This is what we got with a normal equation. 
+
+If we chose a wrong value of $\eta$, we end up with not getting close to the solution or overshooting: 
+
+<img src="Hands_on_ML_notes.assets/image-20210202111949234.png" alt="image-20210202111949234" style="zoom:150%;" />
+
+To find the right learning curve, we will need to use grid search. However, we can limit the number of iterations so the grid search can eliminate models that take too long to converge. At times the gradient is fairly flat, the GD make take a lot of iterations to get to the minimum value. In such a case we use a tolerance, $\epsilon$. This is the difference between the previous theta and the current theta. If the difference is smaller than a certain value, we would simply stop the iterations. 
+
+For example, 
+
+```python
+eta = 0.1
+n_iterations = 1000
+m = 100
+
+theta = np.random.randn(2, 1)
+theta_diff = []
+
+for iteration in range(n_iterations):
+    gradients = 2/m * X_b.T.dot(X_b.dot(theta) - y)
+    prev_theta = theta
+    theta = theta - eta * gradients
+    diff = theta - prev_theta
+    theta_diff.append(diff[1])
+    
+plt.plot(theta_diff)
+```
+
+<img src="Hands_on_ML_notes.assets/image-20210202112640643.png" alt="image-20210202112640643" style="zoom:50%;" />
+
+Here we see that the minimum is reached just after 100 iterations. So, there is no need to go through 1000 iterations. 
+
+### Stochastic Gradient Descent
 
