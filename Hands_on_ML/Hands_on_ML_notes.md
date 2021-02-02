@@ -748,5 +748,113 @@ y_probas_forest = cross_val_predict(forest_clf, X_train, y_train_5, cv=3,
                                    method='predict_proba')
 ```
 
+The ROC curve expects labels and scores but instead of scores we can give class labels, something that random forest classifier returns: 
+
+```python
+y_scores_forest = y_probas_forest[:,1]
+fpr_forest, tpr_forest, threshold_forest = roc_curve(y_train_5, y_scores_forest)
+
+plt.plot(fpr, tpr, 'b', label='SGD')
+plt.plot(fpr_forest, tpr_forest, label='Random Forest Classifier')
+plt.plot([0,1],[0,1], 'k--')
+plt.ylabel('Recall')
+plt.xlabel('False Positive Rate')
+plt.legend(loc='lower right')
+```
+
+<img src="Hands_on_ML_notes.assets/image-20210201143237887.png" alt="image-20210201143237887" style="zoom:100%;" />
+
+We see that Random Forest Classifier is much better classifier than SGD. Quantitatively, we can look at the AUC to see that too: 
+
+```python
+auc_score_sgd = roc_auc_score(y_train_5, y_scores)
+auc_score_rfc = roc_auc_score(y_train_5, y_scores_forest)
+
+for score in [auc_score_sgd, auc_score_rfc]:
+    print(np.round(score,3))
+```
+
+```python
+0.960
+0.998
+```
+
+
+
+### Multiclass Classification
+
+So far we have seen binary classifier. We can extend our analysis of algorithms to **multiclass classifiers** (also called multinomial classifiers). Here are some algorithms that can handle multi classes: 
+
+*   SGD classifiers
+*   Random Forest Classifiers
+*   Naives Bayes Classifiers
+
+while these classifiers are strickly binary classifiers: 
+
+*   Logistic Regression
+*   Support Vector Machines
+
+Of course, even if we are limited to binary classifier, we can still use it to classify multiclasses. For example, if we have 10 classes, we can create 10 binary classifiers for each class. Just like we saw in our MNIST example, our binary classifier could detect either '5' or not. Our 10 classifiers will detect exactly one class or not. This is called **one-versus-the-rest (OvR)** strategy. 
+
+Another strategy is to train a binary classifier for a pair of classes. For example, for our MNIST, we would have one classifier train on '0' and '1', another '2' and '3' and so on. This is known an **one-versus-one (OvO)**. In general, if there are N classes, then we will need to train $N\times (N-1)/2$ classifiers. So, in our example there need to be 45 classifiers! 
+
+Support Vector Machines scale poorly with the size of the training set. So, the OvO is preferred as it is faster to train many classifiers on a smaller training set than few on larger ones. However, for other binary classifiers, OvR is preferred. 
+
+Sci-kit learn automatically detects the number of classes and either uses OvR or OvO based on this. Let's look at an example: 
+
+```python
+from sklearn import SVC
+svm_clf = SVC()
+svm_clf.fit(X_train, y_train)
+svm_clf.predict([some_digit])
+```
+
+That's it. However, notice that when you call the `decision_function()` method, the method returns 10 scores per instance. The value will be higher at the position corresponding to the number. 
+
+### Error Analysis
+
+If this was the real project, you would follow the ML project checklist as listed in the previous chapter. You would explore data preparation options, use mutliple models, fine tune their hyperparameters using `GridSearchCV` and pick the promising one that we can then improve upon. One to improve a model is to analye the types of errors it makes. 
+
+Once you've chosen a promising model, do a k-fold CV and analyze the confusion matrix. 
+
+```python
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train.astype(np.float64))
+
+y_train_pred = cross_val_predict(sgd_clf, X_train_scaled, y_train, cv=3)
+conf_mx = confusion_matrix(y_train, y_train_pred)
+```
+
+Next we use the matplotlib's `matshow()` to plot the confusion matrix: 
+
+```python
+row_sums = conf_mx.sum(axis=1, keepdims=True)
+norm_conf_mx = conf_mx / row_sums
+
+np.filll_diagonal(norm_conf_mx, 0)
+plt.matshow(norm_conf_mx, cmap=plt.cm.gray)
+```
+
+The result is the following: 
+
+<img src="Hands_on_ML_notes.assets/image-20210201174352031.png" alt="image-20210201174352031" style="zoom:80%;" />
+
+Remember that the rows are actual while the columns are predicted. 
+
+
+
+### Multilabel Classification
+
+
+
+
+
+
+
+### Multioutput Classification
+
+
+
 
 
