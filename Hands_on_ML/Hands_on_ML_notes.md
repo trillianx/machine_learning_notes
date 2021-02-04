@@ -1581,7 +1581,102 @@ The figure below shows linear decision boundaries with various probability level
 
 >   The hyperparameter controlling the regularization strength of a Scikit learn's Logisitc Regression is not $\alpha$ but C, where $C = 1/\alpha$. The higher the value of C, the less the model is regularized.
 
+#### Regularization in Logistic Regression
+
+ The tendency of logistic regression is to overfit when it is given a lot of data. We can prevent this by adding the shrinkage terms we saw in linear regression. L1 and L2 regularization are often to used in logistic regression as we do in linear regression. They are simply added to the log-likelihood function. 
+
+Sci-kit learns makes use of `penalty` argument in the `LogisticRegression()` method. By default the L2 regularization is used in Logisitc Regression. 
+
 ### SoftMax Regression
 
+As we saw, the logistic regression is a binary classifier. However, we can extend it to multiple classes. When we do this it is called Softmax Regression or Multinomial Logistic Regression. The Softmax regression model first computes the score $s_k(\bold{x})$ for each class $k$, then estimates the probability of each class by applying the softmax function to the scores. 
 
+The softmax score for a $k$th class is given by, 
+
+<img src="Hands_on_ML_notes.assets/image-20210204111038769.png" alt="image-20210204111038769" style="zoom:150%;" />
+
+Where $\bold{\theta}^{(k)}$ is the parameter corresponding to the $k$th class. Once the score is computed, the softmax uses the softmax function to compute the probability: 
+
+<img src="Hands_on_ML_notes.assets/image-20210204111149786.png" alt="image-20210204111149786" style="zoom:150%;" />
+
+Here: 
+
+*   $K$ is the total number of classes
+*   $s_k(x)$ is the score associated with the class $k$
+*   and $\sigma(s(x))_k$ is the estimated probability that the instance $\bold{x}$ belongs to the class $k$, given the scores of each class for that instance. 
+
+Just like logistic regression, softmax predicts the class with the highest estimated probability: 
+
+<img src="Hands_on_ML_notes.assets/image-20210204111427801.png" alt="image-20210204111427801" style="zoom:150%;" />
+
+>   Softmax only predicts one class at a time because softmax is multiclass and not multioutput. The classes are exclusive. 
+
+#### Training Softmax
+
+The cost function for softmax is called the **cross entropy cost function**:
+
+<img src="Hands_on_ML_notes.assets/image-20210204111719503.png" alt="image-20210204111719503" style="zoom:150%;" />
+
+Where $y^{(i)}$ is the actual label for the given class $k$ while $\hat{p}^{(i)}_k$ is the probability of the $i$th observation (instance) belonging to the $k$th class. 
+
+The gradient of the cross entropy is given by, 
+
+<img src="Hands_on_ML_notes.assets/image-20210204111924615.png" alt="image-20210204111924615" style="zoom:150%;" />
+
+Using GD, we can compute the minimum of the cost function. 
+
+As an example, let's use the Iris dataset to find the three classes: 
+
+```python
+X = iris["data"][:, (2, 3)]  # petal length, petal width
+y = iris["target"]
+
+softmax_reg = LogisticRegression(multi_class="multinomial",solver="lbfgs", C=10)
+softmax_reg.fit(X, y)
+```
+
+Before we test something, let's do a plot of these three species and see if Softmax gets this right: 
+
+```python
+iris = sns.load_dataset("iris")
+sns.scatterplot(x='petal_length', y='petal_width', data=iris, hue='species')
+```
+
+![image-20210204113359184](Hands_on_ML_notes.assets/image-20210204113359184.png)
+
+Now to test, we give it a petal length of 1.5 cm and petal width of 0.3 cm: 
+
+```python
+softmax_reg.predict([[0.5, 0.3]])
+
+array([0])
+```
+
+We see that this instance belongs to class 0. We can also check the probabilities of each of the three classes for this instance: 
+
+```python
+softmax_reg.predict_proba([[0.5, 0.3]])
+
+array([[9.99958613e-01, 4.13874378e-05, 4.51468763e-17]])
+```
+
+We clearly see that the class 0 has a probability of 0.99 while others are effectively zero. 
+
+Now, let's see what happens when things are not very clear: 
+
+```python
+softmax_reg.predict([[4.95, 1.5]])
+
+array([1])
+```
+
+ This returns class 1, which we can believe but let's see how confident it is: 
+
+```python
+softmax_reg.predict_proba([[4.95, 1.5]])
+
+array([[9.78382678e-06, 6.67206794e-01, 3.32783423e-01]])
+```
+
+We see that it is very confident that the class is NOT 0 but between class 1 and 2, we see the probabilities of 67% and 33%. This is very clear as there is a lot of overlap between the two classes. 
 
