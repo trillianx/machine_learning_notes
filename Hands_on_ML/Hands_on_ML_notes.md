@@ -585,7 +585,6 @@ With these definitions, let's look at some metrics that are often used to evalut
     \text{recall} = \frac{TP}{TP + FN}
     $$
     
-
 *   **F1-score** - The F1-score is the harmonic mean of precision and recall. F1-score is particularly useful to compare two or more classifiers. The difference between mean and harmonic mean is that the latter gives more weight to low values. As a result, the classifier will only get a high F1-score if both recall and precision are high.
 
     $$
@@ -1156,3 +1155,321 @@ We see how the gradient evetually converges to zero:
 
 <img src="Hands_on_ML_notes.assets/image-20210202120624096.png" alt="image-20210202120624096" style="zoom:80%;" />
 
+We can do the same in sklearn as follows: 
+
+```python
+from sklearn.linear_model import SGDRegressor
+sgd_reg = SGDRegressor(max_iter=1000,
+                       tol=1e-3,
+                       penalty=None,
+                       eta=0.01)
+sgd_reg.fit(X, y.ravel())
+```
+
+So, the `max_iter` is the number of epochs, the tolerance is what we called $\epsilon$ and $\eta$ is what we already defined. The `penalty` is something we will see shortly. 
+
+### Mini-batch Gradient Descent
+
+Just as the name suggests, mini-batch GD uses small random sets of instances called *mini-batches*. The main advantage of MGD over SGD or GD is that the MGD is designed to work with hardware optimization, especially when using GPUs. This also allows the algorithm to be less erratic than SGD. The comparison is shown in the figure below: 
+
+<img src="Hands_on_ML_notes.assets/image-20210202140713759.png" alt="image-20210202140713759" style="zoom:100%;" />
+
+Finally, here is the table summarizing the various GD versions: 
+
+| Algorithm       | Large m | Out of Core Support | Large n | Hyperparams | Scaling Reqd. | sklearn           |
+| --------------- | ------- | ------------------- | ------- | ----------- | ------------- | ----------------- |
+| Normal Equation | Fast    | No                  | Slow    | 0           | No            | N/A               |
+| SVD             | Fast    | No                  | Slow    | 0           | No            | `LinearRegressor` |
+| Batch GD        | Slow    | No                  | Fast    | 2           | Yes           | `SGDRegressor`    |
+| SGD             | Fast    | Yes                 | Fast    | $\geq2$     | Yes           | `SGDRegressor`    |
+| MGD             | Fast    | Yes                 | Fast    | $\geq2$     | Yes           | `SGDRegressor`    |
+
+### Polynomial Regression
+
+If our data is not linear than the methods we have used so far are not going to work well. Instead, we need to adapt to the underlying data. We will continue to use the parametric model, such as linear regression, but we will incorporate non-linearity in it through the use of higher order terms in the features. 
+
+Let's create a dummy data that has a non-linearity in it: 
+
+```python
+m = 100
+X = 6 * np.random.rand(m, 1) - 3
+y = 0.5 * X ** 2 + X + 2 + np.random.randn(m, 1)
+```
+
+The original function, then has the following form: 
+$$
+y = 0.5X^2 + 1.0X + 2
+$$
+<img src="Hands_on_ML_notes.assets/image-20210203104512847.png" alt="image-20210203104512847" style="zoom:80%;" />
+
+Now let's fit a polynomial to it: 
+
+```python
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+
+# Convert the training features to second order polynomial
+pf = PolynomialFeatures(degree=2, include_bias=False)
+X_poly = pf.fit_transform(X)
+
+# Now fit the new features with a linear model
+lin_reg = LinearRegression()
+lin_reg.fit(X_poly, y)
+```
+
+The coefficients come out to be: 
+
+```python
+print(lin_reg.intercept_[0], lin_reg.coef_[0])
+
+(1.9239817613542773, array([0.90812099, 0.49883774]))
+```
+
+So, the model says that the function has the following form: 
+$$
+0.50X^2 + 0.91X + 1.92
+$$
+The fit looks something like this: 
+
+<img src="Hands_on_ML_notes.assets/image-20210203110722757.png" alt="image-20210203110722757" style="zoom:80%;" />
+
+This is very close to what we started with. 
+
+Polynomial regression also has the ability to use **interaction** features. This is because `PolynomialFeatures` also adds all combinations of features up to a given degree. So, we have two features $a$ and $b$, then `PolynomialFeatures` with `degree=3`, will add all features from $a^3, a^2, a^2b, ab, ab^2, b^2, b^3$. That would be 7 features. 
+
+>   For a polynomial of degree, $d$ and $n$ features, there are $(n + d)! / (d!n!)$ possible combinations. So, beware of feature explosion when using a lot of features or higher degrees. 
+
+### Learning Curves
+
+As we increase the degree, the fit becomes tighter and tighter until it begins to follow the noise in the data rather than the overall shape of the data. Here's an example of three polynomial functions: 
+
+<img src="Hands_on_ML_notes.assets/image-20210203111511397.png" alt="image-20210203111511397" style="zoom:80%;" />
+
+We can see that the polynomial with `degree = 1` underfits the data while the polynomial with `degree=300` overfits the data. 
+
+So, how can we tell if the model is overfitting or underfitting the data? One way find this is to do a k-fold CV and measure the performance of the model. 
+
+*   If the model performs well on the training data and poorly on the test data, we are ovefitting.
+*   If the model performs poorly on both, it is underfitting.  
+
+Another way to tell is by looking at the **learning curves**. Learning curves plot the model's performance on the training set and on the validation set. 
+
+```python
+def plot_learning_curves(model, X, y):
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2)
+    train_errors, val_errors = [], []
+    for m in range(1, len(X_train)):
+        model.fit(X_train[:m], y_train[:m])
+        y_train_predict = model.predict(X_train[:m])
+        y_val_predict = model.predict(X_val)
+        train_errors.append(mean_squared_error(y_train[:m], y_train_predict))
+        val_errors.append(mean_squared_error(y_val, y_val_predict))
+    plt.plot(np.sqrt(train_errors), "r-+", linewidth=2, label="train")
+    plt.plot(np.sqrt(val_errors), "b-", linewidth=3, label="val")
+    plt.xlabel('Training Set size')
+    plt.ylabel('RMSE')
+    plt.legend()
+```
+
+What we do here is to increase the size of the training set from 1 data point to all of the data. This is done by the for loop on line 4. For each dataset size, we train the model, get the RMSE value and then test the model by getting the test RMSE. 
+
+Here's the result of the fit when `degree=1`:
+
+```python
+lin_reg = LinearRegression()
+plot_learning_curves(lin_reg, X, y)
+```
+
+![image-20210203112859390](Hands_on_ML_notes.assets/image-20210203112859390.png)
+
+Let's see what is happening here: 
+
+*   When we start with just one or two data points, the model fits perfectly and so the training RMSE (red) is 0. 
+*   As the dataset size increases, we see that the training RMSE begins to increase until it plateaus. Increasing the data size has no effect on the training RMSE. 
+*   When we test the model that has been trained on a smaller dataset, it is unable to generalize and so the test RMSE (blue) is high to start with. 
+*   As the model trains on more data, it is able to generalize and so the test RMSE comes down but plateaus around 1.5. Adding more data has no effect on it. 
+
+These learning curves are typical of underfitting. Both curves reach a plateau, they are close and fairly high in RMSE value. 
+
+Now let's look at a 10th degree polynomial. We will create a pipeline so we can choose any degree: 
+
+```python
+from sklearn.pipeline import Pipeline
+p_r = Pipeline([
+             ("poly_features", PolynomialFeatures(degree=10, include_bias=False)),
+             ("lin_reg", LinearRegression()),])
+```
+
+So, we have created a pipeline. This pipeline will first create polynomial features and then fit a linear regression to the data. 
+
+```python
+plot_learning_curves(p_r, X, y)
+```
+
+![image-20210203114030039](Hands_on_ML_notes.assets/image-20210203114030039.png)
+
+This is the result. The learning curves look similar but there is a difference: 
+
+*   The training RMSE is much lower than test RMSE. 
+*   The large gap between the two curves suggest that the model performs significantly better on the training set than the test set, which is a hallmark of ovefitting. 
+
+>   One way to improve an overfitting model is to feed it more training data until the validation error reaches the training error. 
+
+What happens if we use the right degree. We know that the degree of 2 was a better fit. Doing so, we get: 
+
+![image-20210203115546444](Hands_on_ML_notes.assets/image-20210203115546444.png)
+
+We can see how close the two curves are. This suggests that that model performs about the same between the training set and the test set. 
+
+### Bias Variance Trade-off
+
+A model's generalization error can be expressed as the sum of three very different errors: 
+
+*   **Bias** - This part is due to wrong assumptions that were made. If the data is non-linear and we use a linear model, our model has a high bias. A high bias model risks in underfitting the data. 
+*   **Variance** - This part is due to model's excessive flexibility. When the model is very flexible it tends to fit the noise and not just the data. A flexible model risks in overfitting the data
+*   **Irreducible Error** - This part is due to noiseness in the data. This error is composed of error that can be reduced and that which cannot be. Data cleaning helps to reduce the error but the other is not possible. 
+
+### Regularized Linear Models
+
+Regularization is a process by which we reduce the flexibility of the model so that the model fits the data better. In linear regression model, regularization is typically achieved by constraining the weights of the model, i.e., the model parameters. 
+
+#### Ridge Regression
+
+Ridge regression uses the following regularization term that is added to the cost function: 
+$$
+\alpha \sum_{i=1}^{n}\theta_i^2
+$$
+This forces the model to not only fit the data but to also keep the weights, $\theta_i$ as small as possible. This is because a large weight will be squared and therefore the total cost function will be increased rapidly. 
+
+*   The hyperparameter $\alpha$ controls how much you want to regularize the model. In other words, $\alpha$ adds importance of the regularization to the total cost function. 
+*   When $\alpha = 0$, there is no regularzation
+*   When $\alpha$ is very high, the model tends to set all the weights to zero in order to reduce the total cost function. 
+
+The **Ridge Regression cost function** is defined as, 
+$$
+J(\theta) = \text{MSE}(\theta) + \frac{\alpha}{2}\sum_{i=1}^{n}\theta_i^2
+$$
+Notice that the weights, $\theta_i$ start from 1 and not from 0. This is because the intersection term is not regularized. 
+
+We can represent all the weigths by a vector, $\bold{w}$. Then, the ridge regression makes use of the $\ell_2$ norm of the weight vector.  
+
+When the model is trained, you want to use the unregularized performance measure to evaluate the model's performance. 
+
+>   It is important to scale the data (i.e. use of `StandardScaler`) before performing the Ridge Regression. 
+
+Here's how we can perform ridge regression in Sci-kit learn
+
+```python
+from sklearn.linear_model import Ridge
+ridge_reg = Ridge(alpha=1, solver='cholesky')
+ridge_reg.fit(X, y)
+```
+
+Here's how the ridge regression changes the model fit when the hyperparameter is changed: 
+
+![image-20210203133628366](Hands_on_ML_notes.assets/image-20210203133628366.png)
+
+The ridge regression can also be used for SGD as follows: 
+
+```python
+sgd_reg = SGDRegressor(penalty='l2')
+sgd_reg.fit(X, y.ravel())
+```
+
+>   The Ridge regression reduces the weights to nearly zero but never gets them down to zero. 
+
+#### Lasso Regression
+
+The Lasso Regression is another regularized version of linear regression. Just like ridge it also adds a regularization term to the cost function, but it makes use of the $\ell_1$ norm. The cost function in the lasso regression is given by, 
+$$
+J(\theta) = \text{MSE}(\theta) + \frac{\alpha}{2}\sum_{i=1}^{n}|\theta_i|
+$$
+
+>   The lasso regression, unlike ridge regression, sets the weights to zero. 
+
+The lasso regression automatically performs feature selection and outputs a **sparse model** (i.e. with few nonzero feature weights). 
+
+Let's look at the following figures to understand how lasso works: 
+
+<img src="Hands_on_ML_notes.assets/image-20210203135513006.png" alt="image-20210203135513006" style="zoom:150%;" />
+
+On the left, we have lasso cost function shown in various concentric diamonds for two weights. Let's say the model was initialized at $\theta_1=2.0, \theta_2=0.5$. We see that $\theta_2$ quickly reduces to zero as it is closer to zero than $\theta_1$. The lasso cost function then continues to reduce until $\theta_1=0$. 
+
+The figure right shows the gradient descent algorithm reaching the minimum as illustrated by the white dots. We see again how quickly $\theta_2$ reduces to zero before $\theta_1$ is too. 
+
+In this example, the optimal parameters for unregularized MSE are $\theta_1=2; \theta_2=0.5$. So, if we increase $\alpha$, the global optimum will move to the left while if we decrease $\alpha$, the global optimum will move right. 
+
+The bottom two plots are for Ridge Regression: 
+
+<img src="Hands_on_ML_notes.assets/image-20210203140240105.png" alt="image-20210203140240105" style="zoom:150%;" />
+
+Due to the $\ell_2$ norm, the ridge regression reduces their weights gradually, which we see in the left plot. The GD is much cleaner and go directly to the global minimum without dancing around. 
+
+>   To prevent Lasso Regression GD from bouncing around, reduce the learning rate gradually during training. 
+
+The lasso cost function is not differentiable at $\theta_i=0$ due to its square cost function. The derivative will be infinite. This is not the case with ridge whose cost function is circular. 
+
+```python
+from sklearn.linear_model import Lasso
+lasso_reg = Lasso(alpha=0.1)
+lasso_reg.fit(X, y)
+```
+
+### Elastic Net
+
+Elastic net is an algorithm that uses both the ridge regression and lasso regression. Elastic net has a mix ratio, $r$. When $r=0$, Elastic Net is equivalent to Ridge Regression and when $r=1$, it is equivalent to Lasso Regression. 
+
+Here's the cost function for Elastic Net:
+$$
+J(\theta) = \text{MSE}(\theta) + r\alpha\sum_{i=1}^{n}|\theta_i| + \left(\frac{1-r}{2}\right)\sum_{i=1}^{n}\theta_i^2
+$$
+Here's how you would use the Ridge Regression: 
+
+```python
+from sklearn.linear_model import ElasticNet
+elastic_net = ElasticNet(alpha=0.1, l1_ratio=0.5)
+elastic_net.fit(X, y)
+```
+
+Scikit-learn calls the mix ratio,  **r ** as **l1_ratio**. 
+
+>   You should always use some sort of regulariztion in your model. Use Ridge regression as default but if you suspect that only few features are useful, then use Lasso or Elastic Net
+
+Another tip to know: 
+
+>   Elastic Net is preferred over Lasso when the number of features > number of training sets or when several features are strongly correlated
+
+### Early Stopping
+
+A different way to regularize iterative learning algorithms such as GD is to stop training as soon as the validation error reaches a minimum. This is known as **early stopping**. However, this only works when GD does not have any stochastic behavior. In other words, this does not work with SGD or min-batch GD. 
+
+Here's an example of how to use early stopping: 
+
+```python
+from sklearn.base import clone
+
+# prepare the data
+poly_scaler = Pipeline([
+        ("poly_features", PolynomialFeatures(degree=90, include_bias=False)),
+        ("std_scaler", StandardScaler())
+    ])
+X_train_poly_scaled = poly_scaler.fit_transform(X_train)
+X_val_poly_scaled = poly_scaler.transform(X_val)
+
+sgd_reg = SGDRegressor(max_iter=1, tol=-np.infty, warm_start=True,
+                       penalty=None, learning_rate="constant", eta0=0.0005)
+
+minimum_val_error = float("inf")
+best_epoch = None
+best_model = None
+for epoch in range(1000):
+    sgd_reg.fit(X_train_poly_scaled, y_train)  # continues where it left off
+    y_val_predict = sgd_reg.predict(X_val_poly_scaled)
+    val_error = mean_squared_error(y_val, y_val_predict)
+    if val_error < minimum_val_error:
+        minimum_val_error = val_error
+        best_epoch = epoch
+        best_model = clone(sgd_reg)
+```
+
+The keyword, `warm_star=True` means that the model continues to train where it left off, instead of starting from scratch. 
