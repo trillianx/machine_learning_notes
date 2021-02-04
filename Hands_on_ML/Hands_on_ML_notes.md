@@ -1473,3 +1473,32 @@ for epoch in range(1000):
 ```
 
 The keyword, `warm_star=True` means that the model continues to train where it left off, instead of starting from scratch. 
+
+### Logistic Regression
+
+Logistic regression is a machine learning algorithm for binary classification. It estimates the probability of an observation belonging to a particular class. If the probability is greater than 50%, logisitic regression then predicts that the instance belongs to that particular class otherwise it belongs to the other class. In logistic regression, we make use of a **positive class** where the probablity is greater than 50% and **negative class** where the probability is less than 50%. This is why logistic regression is a **binary classifier**. 
+
+Logistic regression is a parametric model, just like the linear regression model. The model computes feature weights and the bias term just like linear regression model. But rather than outputting a numerical value, it outputs a **logistic** of the result. The logistic outputs a value between `0` and `1`, as we would be expect it terms of probabilities. This is given by a **sigmoid function** defined as, 
+$$
+\sigma(t) = \frac{1}{1 + exp(-t)}
+$$
+The sigmoid function has the following form: 
+
+![image-20210204091928306](Hands_on_ML_notes.assets/image-20210204091928306.png) 
+
+The probabilities are then given by, 
+$$
+\hat{p} = \sigma(\bold{x}^T\bold{\theta})
+$$
+And finally, the logistic regression model outputs the following: 
+
+<img src="Hands_on_ML_notes.assets/image-20210204092158718.png" alt="image-20210204092158718" style="zoom:150%;" />
+
+From the sigmoid function, we can see that when $\bold{x}^T\bold{\theta}$ is positive, the sigmoid predicts greater than 0.5 or 1, else it predicts less than 0.5 or 0. 
+
+#### Training & Cost Function
+
+The cost function of logisitc regression is given by, 
+
+<img src="Hands_on_ML_notes.assets/image-20210204092653442.png" alt="image-20210204092653442" style="zoom:150%;" />
+
