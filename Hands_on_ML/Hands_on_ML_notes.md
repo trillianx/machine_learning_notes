@@ -1502,3 +1502,86 @@ The cost function of logisitc regression is given by,
 
 <img src="Hands_on_ML_notes.assets/image-20210204092653442.png" alt="image-20210204092653442" style="zoom:150%;" />
 
+Here $m$ are the number of instances or samples in oour dataset while the $y^{(i)}$ is the actual label of an instance $i$. 
+
+Let's look at some scenarios to understand how this cost function works. 
+
+*   If the instance belongs to the negative class, the $y = 0$, we expect the probability to be less than 0.5 and close to 0. So, in this case, the cost function will be: 
+    $$
+    J(\theta) = 0 \times log(0) + 1\times log(1) = 0
+    $$
+    So this would be the cost function for that instance when the prediction matches the negative class actual. 
+
+*   If the instance belongs to the positive class, we expect the probability to be greater than 0.5 and close to 1 while $y=1$. In this case, we get: 
+    $$
+    J(\theta) = 1\times log(1) + (0)\times log(0)
+    $$
+    This too results in the cost function being zero. 
+
+*   Finally, if the instance belongs to the negative class and the probability is greater than 0.5 then: 
+    $$
+    J(\theta) = 0 \times log(1) + (1-0) \times log(0)
+    $$
+    In this case, the cost function will be very large.
+
+The same thing happens when there is a mismatch between positive class and probability less than 0.5. 
+
+Unfortunately, there is no closed-form solution to this cost function. But the cost function is a convex function and therefore the use of GD works really well. 
+
+The derivative of the cost function is given by, 
+
+<img src="Hands_on_ML_notes.assets/image-20210204095141558.png" alt="image-20210204095141558" style="zoom:150%;" /> 
+
+This derivative looks very similar to the derivative of the linear regression cost function: 
+
+<img src="Hands_on_ML_notes.assets/image-20210204095316981.png" alt="image-20210204095316981" style="zoom:150%;" />
+
+and where we used Batch GD. So, any GD will work in finding the minimum of the cost function. 
+
+#### Decision Boundaries
+
+As an example, let's use the Iris dataset and logisitic regression to classify petal width feature. 
+
+```python
+from sklearn import datasets
+iris = datasets.load_iris()
+X = iris["data"][:, 3:]
+y = (iris['target'] == 2).astype(np.int)
+```
+
+Now let's train the logisitic regression on this dataset: 
+
+```python
+from sklearn.linear_model import LogisticRegression
+log_reg = LogisticRegression()
+log_reg.fit(X, y)
+```
+
+We have the following: 
+
+<img src="Hands_on_ML_notes.assets/image-20210204100705835.png" alt="image-20210204100705835" style="zoom:150%;" />
+
+Notice that there is a bit of overlap between the two classes. But from above 2.5 cm and below 1.2 cm, the confidence is very high for the two classes.
+
+We can make predictions for any other value: 
+
+```python
+log_reg.predict([[1.7], [1.5], [1.8]])
+```
+
+For the above three petal widths, we find the predictions: 
+
+```python
+array([1, 0, 1])
+```
+
+The figure below shows linear decision boundaries with various probability levels: 
+
+<img src="Hands_on_ML_notes.assets/image-20210204101057670.png" alt="image-20210204101057670" style="zoom:150%;" />
+
+>   The hyperparameter controlling the regularization strength of a Scikit learn's Logisitc Regression is not $\alpha$ but C, where $C = 1/\alpha$. The higher the value of C, the less the model is regularized.
+
+### SoftMax Regression
+
+
+
