@@ -1345,19 +1345,23 @@ $$
 $$
 So, in the case of linear regression, the OLS now tries to minimize the RSS and $\alpha$ (constant) times the feature weights squared. Through iterative process, the optimization algorithm will reduce some of the feature weights, sometimes close to zero, to minimize the total cost function. 
 
-*   The hyperparameter $\alpha$ controls how much you want to regularize the model. In other words, $\alpha$ adds weights or importance of the regularization to the total cost function. 
+Given a 2D linear regression, a model with high variance is a model whose slope is steep while a high bias model is a model whose slope is shallow. This is true because in a model, whose slope is steep, a small change in the input values has a huge change in the output. 
+
+So a ridge regression process effectively reduces the slope of the linear regression model in multiple dimensions in order to increase its bias. 
+
+*   The hyperparameter $\alpha$ controls how much you want to regularize the model. In other words, $\alpha$ adds weights or importance of the regularization to the total cost function. $\alpha$ can take any non-zero positive value. 
 *   When $\alpha = 0$, there is no regularization
-*   When $\alpha$ is very high, the model tends to set all the weights to zero in order to reduce the total cost function. 
+*   When $\alpha$ is very very high, the model tends to set all the weights to zero in order to reduce the total cost function. This effectively makes the model a mean of the data. 
 
 The **Ridge Regression cost function** is defined as, 
 $$
 J(\theta) = \text{MSE}(\theta) + \frac{\alpha}{2}\sum_{i=1}^{n}\theta_i^2
 $$
-Notice that the weights, $\theta_i$ start from 1 and not from 0. This is because the intersection term is not regularized. 
+Notice that the weights, $\theta_i$ start from 1 and not from 0. This is because the intersection term, $\theta_0$ is not regularized. 
 
 We can represent all the weigths by a vector, $\bold{w}$. Then, the ridge regression makes use of the $\ell_2$ norm of the weight vector.  
 
-When the model is trained, you want to use the unregularized performance measure to evaluate the model's performance. 
+>   When the model is trained, you want to use the unregularized performance measure to evaluate the model's performance. 
 
 >   It is important to scale the data (i.e. use of `StandardScaler`) before performing the Ridge Regression. 
 
