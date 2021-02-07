@@ -1311,7 +1311,7 @@ plot_learning_curves(p_r, X, y)
 This is the result. The learning curves look similar but there is a difference: 
 
 *   The training RMSE is much lower than test RMSE. 
-*   The large gap between the two curves suggest that the model performs significantly better on the training set than the test set, which is a hallmark of ovefitting. 
+*   The large gap between the two curves suggest that the model performs significantly better on the training set than the test set, which is a hallmark of overfitting. 
 
 >   One way to improve an overfitting model is to feed it more training data until the validation error reaches the training error. 
 
@@ -1331,18 +1331,22 @@ A model's generalization error can be expressed as the sum of three very differe
 
 ### Regularized Linear Models
 
-Regularization is a process by which we reduce the flexibility of the model so that the model fits the data better. In linear regression model, regularization is typically achieved by constraining the weights of the model, i.e., the model parameters. 
+Regularization is a process by which we reduce the flexibility of the model during training so that the model fits the data better. In linear regression model, regularization is typically achieved by constraining the weights of the model, i.e., the model parameters. 
 
 #### Ridge Regression
+
+In linear regression, the OLS algorithm finds the best linear regression parameters by minimizing the RSS between the model and the data points. This approach works best when there are a lot of data points. However, when the data are small, the use of OLS by itself can result in high variance.
+
+To counter this, we try to find a linear regression model that does not fit the training data perfectly well but good enough so that its variance is low. This is done by introducing a small amount of bias into how the model fits the training data. 
 
 Ridge regression uses the following regularization term that is added to the cost function: 
 $$
 \alpha \sum_{i=1}^{n}\theta_i^2
 $$
-This forces the model to not only fit the data but to also keep the weights, $\theta_i$ as small as possible. This is because a large weight will be squared and therefore the total cost function will be increased rapidly. 
+So, in the case of linear regression, the OLS now tries to minimize the RSS and $\alpha$ (constant) times the feature weights squared. Through iterative process, the optimization algorithm will reduce some of the feature weights, sometimes close to zero, to minimize the total cost function. 
 
-*   The hyperparameter $\alpha$ controls how much you want to regularize the model. In other words, $\alpha$ adds importance of the regularization to the total cost function. 
-*   When $\alpha = 0$, there is no regularzation
+*   The hyperparameter $\alpha$ controls how much you want to regularize the model. In other words, $\alpha$ adds weights or importance of the regularization to the total cost function. 
+*   When $\alpha = 0$, there is no regularization
 *   When $\alpha$ is very high, the model tends to set all the weights to zero in order to reduce the total cost function. 
 
 The **Ridge Regression cost function** is defined as, 
