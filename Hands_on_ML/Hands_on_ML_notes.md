@@ -1688,3 +1688,5 @@ array([[9.78382678e-06, 6.67206794e-01, 3.32783423e-01]])
 
 We see that it is very confident that the class is NOT 0 but between class 1 and 2, we see the probabilities of 67% and 33%. This is very clear as there is a lot of overlap between the two classes. 
 
+## Chapter 5: Support Vector Machines
+
