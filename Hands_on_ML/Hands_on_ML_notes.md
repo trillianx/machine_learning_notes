@@ -1690,3 +1690,136 @@ We see that it is very confident that the class is NOT 0 but between class 1 and
 
 ## Chapter 5: Support Vector Machines
 
+Support vector machines (SVM) are used for both linear and non-linear regression and classification problems. SVM is also found to be helpful in outlier detection. 
+
+### Linear SVM Classification
+
+The fundamental idea behind SVM can be explained by the two figures below: 
+
+<img src="Hands_on_ML_notes.assets/image-20210208135843613.png" alt="image-20210208135843613" style="zoom:150%;" />
+
+The figure on the left shows two classes being separated by three machine learning algorithms. Two algorithms do a good job in separating the training set, however, they are likely to do badly on the test set as they are very close to the actual classes. The third algorithm, green dash line does very poorly. 
+
+The right figure shows SVM classifier separating the two classes. We can see how well it performs in keeping the two classes separate. You can think of SVM as a model that separates classes by finding a widest possible street between classes. The edges of the road are illustrated by the dash lines in the above figure. This is known as **large margin classification**. 
+
+Notice that by adding more instances on the either side of the large margin wil not change the margins are they are well supported by the instances located at the edges of the margin. These instances are called **support vectors**. 
+
+>   SVM is sensitive to scaling. If scaling is not done, SVM does not work very well. 
+
+### Soft-margin Classifier
+
+In a given SVM, if we impose the condition that all instances should be on one side of the street and not other, then this is called **hard-margin classifier**. Such a classifier, in most cases, will not correctly fit the data. This is because in real life, the classes are never so distinctly separated. Instead, we find a good balance between keeping the street as wide as possible and minimizing the **margin violations** (i.e. instances that end up on the wrong side of the road or in the middle of the street) as possible. This is known as **soft-margin classifier**.
+
+SVM has several hyperparameter, but the commonly used hyperparameter is $C$. This parameter sets the tolerance on the number of margin violations that a SVM can have. When the value is low, the tolerance is low and when the number is high, the tolerance is high. 
+
+<img src="Hands_on_ML_notes.assets/image-20210208141418488.png" alt="image-20210208141418488" style="zoom:150%;" />
+
+The figure shows what happens to the margins when two different values of $C$ are used. 
+
+>   If your SVM model is overfitting, you can try regularizing it by reducing $C$. 
+
+#### Playing with Data
+
+We will look at the Iris dataset and see if we can differentiate the classes between petal length and petal width. 
+
+```python
+iris = datasets.load_iris()
+
+# Get the petal length and width
+X = iris["data"][:, (2, 3)]
+
+# Get Virginica
+y = (iris['target'] == 2).astype(np.float64)
+
+sns.scatterplot(x=X[:,0], y=X[:,1], hue=y)
+```
+
+<img src="Hands_on_ML_notes.assets/image-20210208142337094.png" alt="image-20210208142337094" style="zoom:80%;" />
+
+We wish to use SVM classifier to separate this out: 
+
+```python
+from sklearn.svm import LinearSVC
+svm_clf = Pipeline([
+    ('scaler', StandardScaler()),
+    ('linear_svc', LinearSVC(C=1, loss='hinge'))
+])
+svm_clf.fit(X, y)
+```
+
+Now we can make the predictions: 
+
+```python
+svm_clf.predict([[5.0, 1.0]])
+
+array([0.])
+```
+
+This belons to class 0. 
+
+>   Unlike Logistic Regression, classifiers, SVM classifiers do not output probabilities for each instance. 
+
+There are different kernels that can be used in SVM. For example, we can use `kernel='linear'`. We can also use `SGDClassifier(loss='hinge', alpha=1/(m*C))`. This classifier uses SGD to train the linear SVM classifier. 
+
+>   Here are few important things to remember when using `LinearSVC` : 
+>
+>   *   This class regularizes the bias term, so you should center the training data by subtracting the mean from the data. This is automatic if you scale the data using `StandardScalar`.
+>   *    It is also important to use `loss=hinge` as it is not set as default.
+>   *   Set the `dual=False` unless there are more features than training instances. 
+
+### Non-linear SVM Classification
+
+When the underlying data is not linear, we make use of non-linear SVM classifiers. One way to handle non-linear data is to add more features such as features with higher orders.  For example, if we have the following data shown in figure on the left, 
+
+<img src="Hands_on_ML_notes.assets/image-20210208144810897.png" alt="image-20210208144810897" style="zoom:150%;" />
+
+This data is not linearly separable by itself. But by adding a degree of polynomial to 2, we can separate it easily as seen in the figure on the right. 
+
+Here's how we can do this: 
+
+```python
+from sklearn.datasets import make_moons
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import PolynomialFeatures
+
+X, y = make_moons(n_samples=100, noise=0.15)
+
+polynomial_svm_clf = Pipeline([
+    ('poly_features', PolynomialFeatures(degree=3)),
+    ('scaler', StandardScaler()),
+    ('svm_clf', LinearSVC(C=10, loss='hinge'))
+])
+
+```
+
+Sometimes, you may get a warning such as the LinearSVC failed to converge. In that case, increase the `max_iter`, a parameter in the `LinearSVC()` to something higher. The default is 1000. 
+
+We can see how the higher order polynomial can separate the two classes well: 
+
+<img src="Hands_on_ML_notes.assets/image-20210208145312027.png" alt="image-20210208145312027" style="zoom:80%;" />
+
+#### Polynomial Kernel
+
+As seen in the previous chapter, the use of polynomial degree helps us to solve the problem. However, a higher polynomial degree creates interaction terms, as seen earlier, which can explode when the degree is higher. The high number of features can be a challenge when the data itself is not too large. Also, the higher number of features tend to slow the model down. 
+
+Fortunately, there is a neat little trick called the **kernel trick**, which we will see shortly, that allows us to get the same benefits of using a polynomial of higher degree but not the inconvenience: 
+
+```python
+from sklearn.svm import SVC
+poly_kernel_svm_clf = Pipeline([
+    ('scaler', StandardScaler()),
+    ('svm_clf', SVC(kernel='poly', degree=3, coef0=1, C=5))
+])
+poly_kernel_svm_clf.fit(X, y)
+```
+
+The code trains an SVM classifier using a 3rd degree polynomial kernel. The figure below shows fitting a 3rd degree and the 10th degree kernel.
+
+![image-20210208150756604](Hands_on_ML_notes.assets/image-20210208150756604.png)
+
+The hyperparameter, `coef0` controls how much the model is influenced by high-degree polynomials versus low-degree polynomials. 
+
+>   A common approach to finding the right parameters to first start with a coarse grid search and then doing a finer grid search around the best values found earlier. 
+
+### Similarity Features
+
