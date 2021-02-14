@@ -1702,7 +1702,7 @@ The figure on the left shows two classes being separated by three machine learni
 
 The right figure shows SVM classifier separating the two classes. We can see how well it performs in keeping the two classes separate. You can think of SVM as a model that separates classes by finding a widest possible street between classes. The edges of the road are illustrated by the dash lines in the above figure. This is known as **large margin classification**. 
 
-Notice that by adding more instances on the either side of the large margin wil not change the margins are they are well supported by the instances located at the edges of the margin. These instances are called **support vectors**. 
+Notice that by adding more instances on the either side of the large margin will not change the margins are they are well supported by the instances located at the edges of the margin. These instances are called **support vectors**. 
 
 >   SVM is sensitive to scaling. If scaling is not done, SVM does not work very well. 
 
@@ -1755,9 +1755,9 @@ svm_clf.predict([[5.0, 1.0]])
 array([0.])
 ```
 
-This belons to class 0. 
+This belongs to class 0. 
 
->   Unlike Logistic Regression, classifiers, SVM classifiers do not output probabilities for each instance. 
+>   Unlike Logistic Regression and other classifiers, SVM classifiers do not output probabilities for each instance. 
 
 There are different kernels that can be used in SVM. For example, we can use `kernel='linear'`. We can also use `SGDClassifier(loss='hinge', alpha=1/(m*C))`. This classifier uses SGD to train the linear SVM classifier. 
 
