@@ -1823,3 +1823,50 @@ The hyperparameter, `coef0` controls how much the model is influenced by high-de
 
 ### Similarity Features
 
+Another technique to tackle nonlinear problems is to add features computed using a **similarity function**, which measures how much each instance resembles a particular **landmark**. The idea behind this is to use Gaussian distributions which are centered at certain positions and then measuring the instances in the dataset from these two positions. When the data is plotted based on the measurement of these two Gaussians, we get a linearly differentiable space. 
+
+The similarity function in this case is the **Gaussian Radial Basis Function (RBF)**. It is defined as follows, 
+
+<img src="Hands_on_ML_notes.assets/image-20210216104508614.png" alt="image-20210216104508614" style="zoom:150%;" />
+
+The value of RBF is `0` when it is far away from its landmark (aka it's centering) and equal to `1` at its centering. Now based on this, we compute the function. For example, consider the following 1D dataset on the left of the figure below: 
+
+<img src="Hands_on_ML_notes.assets/image-20210216104640043.png" alt="image-20210216104640043" style="zoom:150%;" />
+
+The 1D dataset has two classes, green and blue. These two classes are not differentiable linearly so we use RBF. For example, for an instance at `x = -1`, in the left figure is at a distance of 1 for one Gaussian and at a distance of 2 for the second. Thus, the two RBFs will have values of:
+
+*   $x_2 = (-0.3 \times 1^2) \approx 0.74$ 
+*    $x_3 = (-0.3 \times 2^2) \approx 0.30$. 
+
+Here we use $\gamma = 0.3$. Now, when we plot this instance and all instances in the new 2D space, we have the figure on the right. We can see that the green and the blue observations are well separated. 
+
+The simplest approach to selecting landmark is to create a landmark at each and every instance of the dataset. Doing this will create multiple dimensions thus increasing the chances that the training set is transformed into a linearly separable set. But the downside of doing this is that if a training set has $n$ features and $m$ features, the transformed set will contain $m$ features and $m$ instances. This can explode if the data is large. 
+
+### Gaussian RBF Kernel
+
+Just like we used the kernel to be polynomial, we can pass the kernel to be RBF in SVC: 
+
+```python
+rbf_kernel_svm_clf = Pipeline([
+    ('scaler', StandardScaler()),
+    ('svm_clf', SVC(kernel='rbf', gamma=5, C=0.001))
+])
+rbf_kernel_svm_clf.fit(X, y)
+```
+
+This model is plotted in the figure below for various values of $\gamma$ and $C$: 
+
+<img src="Hands_on_ML_notes.assets/image-20210216105936353.png" alt="image-20210216105936353" style="zoom:150%;" />
+
+*   When $\gamma$ increases, the Gaussian is narrowed down. This results in the decision boundary that is more wiggly around individual instances. When $\gamma$ is small, the Gaussian is large which results in a smoother decision boundary. 
+
+So, we see that $\gamma$ acts as a regularization parameter. So, if your model is overfitting, you should reduce $\gamma$ and increase it if it underfitting. This also goes with the parameter $C$. 
+
+There are a lot of kernels that exist so which one should we use? As a rule of thumb, always start with a linear kernel. If your training set is not too large, you can use Gaussian RBF Kernel. It works in most cases. If you have more time and resources, you should then try out different kernels. 
+
+>    LinearSVC is much faster than SVC(kernel='linear') especially if the training set is too large or if it has plenty of features. 
+
+### Computation Complexity
+
+
+
