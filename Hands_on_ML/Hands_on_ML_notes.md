@@ -2090,3 +2090,56 @@ Here's an example of a decision that is regularized (right) and the same that is
 
 <img src="Hands_on_ML_notes.assets/image-20210218102459114.png" alt="image-20210218102459114" style="zoom:150%;" /> 
 
+### Regression
+
+Decision trees are also capable of performing regression tasks. Let's see an example. 
+
+```python
+from sklearn.tree import DecisionTreeRegressor
+
+tree_reg = DecisionTreeRegressor(max_depth=2)
+tree_reg.fit(X, y)
+```
+
+If we were to use a regression dataset, we would find a decision that would look something like this: 
+
+<img src="Hands_on_ML_notes.assets/image-20210218103238034.png" alt="image-20210218103238034" style="zoom:100%;" />
+
+Suppose we wish to predict for an instance, $x_1=0.6$. We would start at the root. We see that our value is greater than 0.197, so we move to the right subtree. Here, our value is less than 0.772. So, we move to the left leaf. Here we find that our prediction is `value=0.111`. We see that 110 samples were used to create this node. Thus the value of 0.111 is the average of the 110 samples used with MSE of 0.015. 
+
+Visually, we see how the decision tree fits a non-linear data: 
+
+<img src="Hands_on_ML_notes.assets/image-20210218103644539.png" alt="image-20210218103644539" style="zoom:100%;" />
+
+If we were to increase the depth to 3, we get the decision tree on the right. If were to let the decision tree go all the way, we would get the following as seen on the left bottom plot. 
+
+<img src="Hands_on_ML_notes.assets/image-20210218103815285.png" alt="image-20210218103815285" style="zoom:100%;" />
+
+The right plot shows regularization which gives a more reasonable fit. 
+
+The cost function associated with regression trees is given by: 
+
+<img src="Hands_on_ML_notes.assets/image-20210218105032730.png" alt="image-20210218105032730" style="zoom:80%;" />
+
+#### Instability
+
+In general, decision trees are simple to understand and interpret. They are easy to use, versatile, an powerful. However, there are few limitations. 
+
+*   **Decision trees love orthogonal decision boundaries**. They always split vertically or horizontally. This makes then sensitive to training set rotation. 
+
+    Consider the example below. 
+
+    <img src="Hands_on_ML_notes.assets/image-20210218105403183.png" alt="image-20210218105403183" style="zoom:80%;" />
+
+    As you can see in the left figure, the decision tree  is able to easily fit the data. But we rotate the feature space by 45 degrees, and now we have a decision tree that is more complex. The model on the right will not generalize well. We can avoid this by using PCA. 
+
+*   **Decision trees are generally more sensitive to small variations**. If you were to remove the widest Iris versicolor from the iris training set ([4.8, 1.8]), we get a model representation that looks like this: 
+
+    <img src="Hands_on_ML_notes.assets/image-20210218105741242.png" alt="image-20210218105741242" style="zoom:80%;" />
+
+    This is the blue dot removed from the previous figure. We see this new figure is way different. As we will see Random Forests can limit the instability by averaging predictions over many trees, as we will see in the next chapter. 
+
+## Chapter 7: Ensemble Learning and Random Forest
+
+
+
