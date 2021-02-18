@@ -1868,5 +1868,225 @@ There are a lot of kernels that exist so which one should we use? As a rule of t
 
 ### Computation Complexity
 
+The `LinearSVC` implements an optimized algorithm for linear SVMs. It does not support kernel trick but it scales well with training sets and number of features. The algorithm takes longer if you wish higher precision but this can be controlled by the tolerance hyperparameter, $\epsilon$. In most cases, the default is fine. 
 
+The `SVC` is also optimized and scales well with sparse features. It uses kernel trick. The table below shows some comparisons between various SVMs: 
+
+<img src="Hands_on_ML_notes.assets/image-20210216111832042.png" alt="image-20210216111832042" style="zoom:80%;" />
+
+### SVM Regression
+
+The SVM regression does the opposite of SVM classification. Rather than find a large margin that separates two classes, it find the largest margin that includes as many instances as possible while limiting the margin violations. In this case, larger the margin less would be the number of violations. The figure shows two SVM regression models that are trained on linear data. The width of the margins defined by the hyperparameter, $\epsilon$. 
+
+![image-20210216112217242](Hands_on_ML_notes.assets/image-20210216112217242.png)
+
+So, when the hyperparameter is small, it puts less restriction on margin violations. We see that adding more training instances within the margins does not change the model's predictions. 
+
+SVM regression is perfomed by `LinearSVR` in sklearn:
+
+```python
+from sklearn.svm import LinearSVR
+svm_reg = LinearSVR(epsilon=1.5)
+svm_reg.fit(X, y)
+```
+
+ To tackle non-linear regression tasks, we use kernelized SVM model. 
+
+```python
+from sklearn.svm import SVR
+svm_poly_reg = SVR(kernel='poly', degree=2, C=100, epsilon=0.1)
+svm_poly_reg.fit(X, y)
+```
+
+The figures below show the non-linear SVM regression fit to the data: 
+
+![image-20210216112747269](Hands_on_ML_notes.assets/image-20210216112747269.png)
+
+### Under the Hood
+
+In this section we will see how SVM make predictions. 
+
+
+
+## Chapter 6: Decision Trees
+
+Like SVMs, decision trees can perform both classification and regression and even multioutput tasks. They are powerful algorithms that can fit complex datasets. We will see in this chapter how to train, visualize, and predict with decision trees. 
+
+### Training and Visualizing a Decision Tree
+
+Let's take an example to illustrate how to train and visualize a decision tree. 
+
+```python
+from sklearn.datasets import load_iris
+from sklearn.tree import DecisionTreeClassifier
+
+iris = load_iris()
+
+# Petal Length and Petal Width
+X = iris.data[:, 2:]
+y = iris.target
+
+# Train a Tree
+tree_clf = DecisionTreeClassifier(max_depth=2)
+tree_clf.fit(X, y)
+```
+
+As we can see the training a tree is like training any classifier. Now let's visualize the fit: 
+
+```python
+from sklearn.tree import export_graphviz
+export_graphviz(
+    tree_clf,
+    out_file='iris_tree.dot',
+    feature_names=iris.feature_names[2:],
+    class_names=iris.target_names,
+    rounded=True,
+    filled=True
+)
+```
+
+This creates a `.dot` image, which you can convert from the command line: 
+
+```python
+dot -Tpng iris_tree.dot -o iris_tree.png
+```
+
+The result is the following: 
+
+![image-20210218085845980](Hands_on_ML_notes.assets/image-20210218085845980.png)
+
+Let's see how the tree represented in the above image makes predictions. 
+
+### Making Predictions
+
+In this section, we will take an example of an iris flower whose class we do not know. 
+
+#### Traversing the Tree
+
+We start at the root note (depth = 0). This node asks whether the flower's petal length is smaller than 2.45 cm. If this is true, we move down the left child of the tree. This would be at depth = 1. In this case, there is no child to this node. So, this is called a **leaf node**. Here we see that the classification of our iris flower would be of class *setosa*.
+
+If our flower's petal length were greater than 2.45 cm, we would move to the right. Again, this right child has a depth of 1. Here we are asked another question, the petal width. This node has **two children** or two **leafs**. Based on the answer to our question, our flower will be classified as *versicolor* or *virginica*. Note that both these leafs have a depth of 2. 
+
+>   Decision tree requires very little data preparation. In fact, they don't even require data scaling or centering. 
+
+#### Looking at Other Tree Features
+
+We notice that each node has **samples** that are listed. These are the total samples of instances that was used to train each of the nodes. For example, a total of 150 training instances were used for the root node. We see that 100 instances had petal length that are greater than 2.45 cm and 50 that are less than 2.45 cm and so on. 
+
+The value in each node tells us the number of training instances of each class were applied. For example, for the left node after the root, we see `value = [50, 0, 0]` suggesting that 50 of one class were used. There were none from the other two classes. 
+
+Finally, the **gini** value tells us how pure a certain node. The purity here means the purity of the classes. We see that the left node after the root has `gini = 0` suggesting that we have a pure node. This is illustrated by looking at the value array. 
+
+The **Gini impurity** is given by,
+$$
+G_i = 1 - \sum^{n}_{k=1}p_{i,k}^2
+$$
+where $p_{i,k}$ is the ratio of class $k$ instances among the training instances in the $i$th node. 
+
+>   Sklearn uses the CART algorithm which produces only binary trees. Other algorithms such as ID3 can produce decision trees with nodes that have more than two children. 
+
+If we were to take the boundaries from the decision tree above, we can divide the feature space as follows: 
+
+![image-20210218092503810](Hands_on_ML_notes.assets/image-20210218092503810.png)
+
+First the feature petal length is divided at 2.45 cm. Then the petal width is divided at 1.75 cm. We can visually see how well the decision has divided the feature space in order to create three classes. Since we set `max_depth=2`, the feature space was divided twice. 
+
+The vertical dash lines shows another decision boundary that will be implemented if we get `max_depth=3`. 
+
+#### Estimating Class Probabilities
+
+The decision tree classifier can estimate the probability that an instance belong to a particular class $k$. For example, if an instance has petals that are 5 cm long and width of 1.5 cm. Then looking at the decision tree we know that belongs to the green leaf. Now, it determines the probabilities of each class by taking the ratio of the values at the current node by taking the ratio of each class with total instances across all classes. 
+
+For example, for the green leaf node, we have `values=[0, 49, 5]`. So, the total instances are `54`. Thus the ratios for each class would be: `proba=[0/54, 49/54, 5/54] = [0, 90.7%, 9.3%]`. We can see in the output below: 
+
+```python
+tree_clf.predict([[5.0, 1.5]])
+    
+array([1]) 
+```
+
+And we can check the probabilities: 
+
+```python
+tree_clf.predict_proba([[5.0, 1.5]])
+
+array([[0.        , 0.90740741, 0.09259259]])
+```
+
+With this information we can compute the Gini index for the 2nd node. So, we have:
+
+```python
+arr = tree_clf.predict_proba([[5.0, 1.5]])
+gini = 1 - np.sum(arr ** 2)
+
+print(np.round(gini, 3))
+0.168
+```
+
+This is exactly we have for the second node, which is green in color. 
+
+### The CART Training Algorithm
+
+Sci-kit learn uses the Classification and Regression Tree (CART) algorithm to train decision trees. It splits the feature space into two subsets using a single feature, $k$ and threshold $t_k$. It does so by finding a pair $(k, t_k)$ such that it produces the purest subsets (weighted by their size). This pair is found by minimizing the cost function: 
+
+<img src="Hands_on_ML_notes.assets/image-20210218094201084.png" alt="image-20210218094201084" style="zoom:150%;" />
+
+Where $m$ is the total number of training instances. Once the split has been done, it again uses the same cost function to further split the feature space. It is done recursively. It stops recursing when the algorithm reaches the `max_depth`, which is a hyperparameter or when the algorithm cannot split the feature space anymore. Few other parameters we have are: 
+
+*   `min_samples_split`
+*   `min_samples_leaf`
+*   `min_weight_fraction_leaf`
+*   `max_leaf_nodes`
+
+As you can see the CART algorithm is a greedy algorithm. It searches for an optimum solution from the top, therefore there is not guarentee that it will always produce an optimal solution. However, it does produce a reasonable solution. The decision tree problem is NP-complete. In the sense, it requires $\mathcal{O}(e^{m})$ time. This is too long if the $m$ samples increase. 
+
+The decision tree traversal takes $\mathcal{O}(log_2(m))$ so it is really fast. 
+
+#### Gini Impurity Or Entropy
+
+Entropy, which originates from Thermodynamics, is used in machine learning as a measure of impurity. A set's impurity is zero if all the instances in the set belong to one class. The entropy equation is given by, 
+
+<img src="Hands_on_ML_notes.assets/image-20210218095209678.png" alt="image-20210218095209678" style="zoom:150%;" />
+
+Let's see what we get for the green node: 
+
+```python
+ar = tree_clf.predict_proba([[5.0, 1.5]])
+
+# We remove any probabilities that are zero
+ar2 = ar[0][1:]
+
+# We compute entropy: 
+entropy = -np.sum(ar2 * np.log2(ar2))
+
+print(entropy)
+
+0.44506485705083865
+```
+
+So, which impurity metric should we use? 
+
+It really does not matter which one we use. Both are equally good. However, Gini impurity is slightly faster. Gini impurity tends to isolate the most frequent class in its own branch of the tree, while entropy tends to produce slightly more balanced trees. 
+
+#### Regularization Hyperparameters
+
+Decision tree makes no assumption of the underlying data. This makes decision tree more susceptible to overfitting. 
+
+>   A **nonparametric model** is called so not because it has no parameters, which it has a lot, but because the number the of parameters are not determined prior to training. A **parametric model**, such as, linear regression has predetermined parameters before training.  
+
+In order to prevent a decision tree from overfitting, we restrict it through regularization. The easiest way to restrict a decision tree is by restricting its depth. This is set by the hyperparameter, `max_depth`. Other hyperparameters used for regularization are: 
+
+*   `min_samples_split` - Minimum number of samples a node must have before it can split
+*   `min_samples_leaf` - Minimum number of samples a leaf node must have
+*   `min_weight_fraction_leaf` - This is the same as `min_samples_leaf` but expression as a fraction of total number of weighted instances
+*   `max_leaf_nodes` - The maximum number of leaf nodes
+*   `max_features` - The maximum number of features that are evaluated for splitting at each node
+
+>    In summary, increasing `min_*` hyperparameters or reducing `max_*` hyperparameters will regularize the model. 
+
+Another technique often used to regularize a tree is **pruning**. In pruning, the tree is allowed to grow unrestricted. Then the nodes are pruned or deleted. This is based on the following condition: if the node whose children provide no statistically significant improvement in the purity are deleted. The statistical significance is performed through the use of $\chi^2$ test. The pruning continues until all unnecessary nodes have been pruned. 
+
+Here's an example of a decision that is regularized (right) and the same that is not (left):
+
+<img src="Hands_on_ML_notes.assets/image-20210218102459114.png" alt="image-20210218102459114" style="zoom:150%;" /> 
 
