@@ -2141,5 +2141,340 @@ In general, decision trees are simple to understand and interpret. They are easy
 
 ## Chapter 7: Ensemble Learning and Random Forest
 
+The idea behind ensemble learning is that you train a group of decision trees, each on a random subset of the training set. To make predictions, you obtain the predictions of all the individual trees. In a classification setting, we predict the class that gets the most votes while in the regression setting, we take the mean value. An ensemble of decision trees is called a **Random Forest** and despite its simplicity, it is the most powerful ML algorithm available today. 
 
+In this chapter, we will discuss the most popular Ensemble methods, including bagging, boosting, and stacking. 
+
+### Voting Classifiers
+
+The Ensemble learning does not have to be a single algorithm that is trained on randomly selected subsample of the dataset. It can be a set of algorithms that are given random subset of dataset. Such an ensemble will look like this: 
+
+<img src="Hands_on_ML_notes.assets/image-20210218111553485.png" alt="image-20210218111553485" style="zoom:80%;" />
+
+Each algorithm may be 80% accurate but collectively the accuracy can be over 90% or more. Suppose we have created this ensemble. Now each of these classifiers will make predictions, we then in turn use the majority rule and select the class that is most common among these classifiers: 
+
+<img src="Hands_on_ML_notes.assets/image-20210218111753196.png" alt="image-20210218111753196" style="zoom:80%;" />
+
+This simple idea picks weak learners together and through the power of collection, the final prediction is much more accurate than each individual weak learner. 
+
+>   Ensemble methods work best when the predictors are as independent from one another as possible. One way to get diverse classifiers is to train them using very different algorithms. This increases the chance that they will make very different types of errors, improving the ensemble's accuracy. 
+
+Here's an example of the code to train an ensemble of algorithms: 
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import VotingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+
+log_clf = LogisticRegression()
+rnd_clf = RandomForestClassifier()
+svm_clf = SVC()
+
+voting_clf = VotingClassifier(
+                       estimators=[('lr', log_clf),
+                                   ('rf', rnd_clf),
+                                   ('svc', svm_clf)],
+                       voting='hard')
+
+voting_clf.fit(X_train, y_train)
+```
+
+If we wish to predict the class with the highest class probability, averaged over all the individual classifiers, we use `voting=soft`. This works better than `voting=hard`, as it gives more weight to votes with higher probabilities. When algorithms do not output class probabilities, as SVC does not, we need to use `voting=hard`. 
+
+>   Use `voting=soft` is all algorithms have `.predict_proba()` method. Else use `voting=hard`
+
+### Bagging & Pasting
+
+In the previous section, we saw how we created an ensemble of different algorithm, which were trained on the same dataset and made predictions. Another approach is to use the same training algorithm but train each of them on a different random subset of the training set. For example, take logistic regression as our algorithm. We then create 1000 random training sets or samples. We then make 1000 copies of logisitic regression and train each of them on these 1000 training samples. 
+
+*   When the samples are created randomly **with replacement** , it is called **bagging**
+*   When the samples are created randomly **without replacement**, it is called **pasting**
+
+<img src="Hands_on_ML_notes.assets/image-20210218113427345.png" alt="image-20210218113427345" style="zoom:80%;" />
+
+>   Bagging and pasting involves training several algorithms of the same type on different randomly selected samples of the training set
+
+Once all the algorithms are trained, the prediction is made using a majority rule (classification) or by taking the mean of the predictions (regression). 
+
+>   The use of ensemble learning reduces both the bias and variance
+
+Bagging and pasting can be trained in parallel using CPUs or GPUs.  This is why bagging and pasting is scales easily. 
+
+Let's see how to do bagging and pasting in sklearn: 
+
+```python
+from sklearn.ensemble import BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier
+
+bag_clf = BaggingClassifier(
+                            DecisionTreeClassifier(),
+                            n_estimators=500,
+                            max_samples=100,
+                            bootstrap=True,
+                            n_jobs=-1
+                            )
+
+bag_clf.fit(X_train, y_train)
+y_pred = bag_clf.predict(X_test)
+```
+
+When we set `bootstrap=True`, we perform bagging as bootstrap, by definition makes use of *with replacement*. To use pasting simply set `bootstrap=False`. In the code, we made use of 500 decision trees. 
+
+>   The `BaggingClassifier` automatically performs soft voting instead of hard voting if the base classifier can estimate class probabilities. 
+
+The figure below shows the use of single decision tree and decision trees using bagging: 
+
+<img src="Hands_on_ML_notes.assets/image-20210218114327920.png" alt="image-20210218114327920" style="zoom:80%;" />
+
+As we can see the model on the right will generalize better than the one on the left. 
+
+Bootstrapping introduces a bit more diversity in the subsets that each predictor is trained on, so bagging ends up with a slightly higher bias than pasting; but the extra diversity also means that the predictors end up being less correlated, so the ensemble’s variance is reduced. Overall, bagging often results in better models, which explains why it is generally preferred. However, if you have spare time and CPU power, you can use cross-validation to evaluate both bagging and pasting and select the one that works best.
+
+#### Out-of-Bag Evaluation
+
+The side advantage of bagging is the because some of the instances are not sampled, they can then be used as a validation set. This is known an **out of bad evaluation**. Note that in general about 37% of instances from a training dataset are not evaluated and that these 37% are not the same for each of the decision trees or algorithm in bagging due to randomness. 
+
+In sklearn, you can set `oob_score=True` when creating `BaggingClassifier` to request automatic `oob` evaluation after training. 
+
+```python
+bag_clf = BaggingClassifier(
+					DecisionTreeClassifier(),
+                    n_estimators=500,
+    				bootstrap=True,
+    				n_jobs=-1,
+    				oob_score=True
+                   )
+bag_clf.fit(X_train, y_train)
+```
+
+
+
+### Random Patches & Random Subspaces
+
+Rather than instant sampling as bagging does, we can instead sample the features. This is done by two hyperparameters, `max_features` and `bootstrap_features`. This way each predictor will be trained on a random subset of the input features. This technique is particularly helpful when working with high dimensional inputs such as images. Sampling both training instances and features is called the **Random Patches method**. 
+
+Set `bootstrap=False` and `max_samples=1.0` to keep all training instances but sampling features (by setting `bootstrap_features=True`) and/or `max_features` to a value smaller than 1.0. 
+
+>   Sampling features results in even more predictor diversity, trading a bit more bias for a lower variance. 
+
+### Random Forest
+
+Instead of using bagging and passing it a decision tree algorith, you can instead use the Random Forest classifier. It is optimized for decision trees. Also, the random forest classifier randomizes on the features rather than instances as bagging does. 
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+
+rnd_clf = RandomForestClassifier(
+						n_estimators=500,
+    					max_leaf=16,
+    					n_jobs=-1
+)
+
+rnd_clf.fit(X_train, y_train)
+y_pref_rf = rnd_clf.predict(X_test)
+```
+
+The random forest classifier has all the hyperparameters of a decision tree classifier and all the hyperparameters of a bagging classifier. 
+
+As mentioned, the Random Forest classifier randomly selects a set of k features from the sample of n features at random for each decision tree. It then finds the best feature to split. At every split, a random set of features are used and the best feature is used to create a split. This allows each tree to be unique from the other. Therefore, in a given random forest, each tree is independent of each other. This results in higher bias and low variance. Such a model is in general better overall. 
+
+#### Extra Tree
+
+Rather than using the best feature from a subset of randomly selected features to split the feature space, it is possible to make trees even more random by also using random thresholds for each feature rather than searching for the best possible thresholds. This is known as **extremely randomized trees**. This technique is much faster than standard random forest because the slowest thing in the random forest is identifying the optimal feature to split on for a given node. 
+
+Sklearn has the following class, `ExtraTreesClassifier()` which does what we just described above. 
+
+>   Use gridsearch to optimize the parameters and decide whether a random forest or exta trees would be better to use
+
+#### Feature Imporance
+
+Another good quality of random forest is that is gives us a list of features that it found to be important. It does this by looking at how much the tree nodes that use a given feature reduced impurity on average across all trees in a forest. In other words, it is the weighted average, where each node's weight is equal to the number of training samples that are associated with it. 
+
+Sklearn computes the score automatically and returns using the attribute `feature_importances_`. 
+
+```python
+from sklearn.datasets import load_iris
+iris = load_iris()
+rnd_clf = RandomForestClassifier(n_estimators=500, n_jobs=-1)
+rnd_clf.fit(iris['data'], iris['target'])
+
+for name, score in zip(iris['feature_names'], rnd_clf.feature_importances_):
+    print(name, score)
+```
+
+And here is the output: 
+
+```python
+sepal length (cm) 0.112492250999
+sepal width  (cm) 0.0231192882825
+petal length (cm) 0.441030464364
+petal width  (cm) 0.423357996355
+```
+
+Random Forest are very handy to get a quick understanding of what features actually matter, in particular if you need to perform feature selection. 
+
+### Boosting
+
+Boosting refers to an ensemble method that combines several weak learners into a strong learner. The general idea behind boosting is that you train algorithms on the mistakes of the previous algorithm sequentially such that each correct the mistakes of their predecessors. Let's look at some of the most popular boosting algorithms. 
+
+#### Adaboost
+
+Adaboost, which is sort of **Adaptive Boosting** trains on the mistakes of its predecessor. For example, an adaboost classifier will first train a base classifier (e.g. a Decision Tree) and uses it to make predictions on the training set. Each of the training instances have the same weight. The algorithm then increases the relative weights of misclassified training instances. Then it trains the second classifier, using the updated weights, and again makes predictions on the training set, updates the instance weights, and so on. 
+
+This is illustrated in the figure below: 
+
+<img src="Hands_on_ML_notes.assets/image-20210218135822637.png" alt="image-20210218135822637" style="zoom:80%;" />
+
+We begin with training instances that have the same color, indicating same weight. But as the algorithm makes mistakes, the weights of the instances are increased (darker color). Once all the algorithms have been trained, the predictions are made very much like bagging or pasting, except that the algorithms have different weights depending on their overall accuracy on the weighted training set. 
+
+>   Because Adaboost is sequential, it cannot be parallelized and as a result this technique does not scale as well as bagging or scaling. 
+
+Let's take a closer look at the Adaboost algorithm. 
+
+1.  Each instance weight is initial set to $w^{(i)} = 1/m$, where $m$ is the total number of instances. 
+
+2.  The weighted error rate of the $j^{th}$ predictor is given by: 
+
+    <img src="Hands_on_ML_notes.assets/image-20210218144614545.png" alt="image-20210218144614545" style="zoom:80%;" />
+
+    where $\hat{y}^{(i)}_j$ is the $j^{th}$ predictor's prediction for the $i^{th}$ instance.
+
+3.  The predictor's weight is then computed using the following equation: 
+
+    <img src="Hands_on_ML_notes.assets/image-20210218145340780.png" alt="image-20210218145340780" style="zoom:80%;" />
+
+    where $\eta$ is the learning rate hyperparameter (default is 1). The more accurate the predictor, the higher would be its weight. 
+
+4.  Finally, through each iteration, the weights are updated in the following way: 
+
+    <img src="Hands_on_ML_notes.assets/image-20210218145548761.png" alt="image-20210218145548761" style="zoom:80%;" />
+
+    Once we loop through all the instances, the weights are normalized (i.e. divided by $\Sigma_{i=1}^mw^{(i)}$). 
+
+5.  The new predictor is trained using the updated weights and the whole process is repeated. The algorithm stops when the desired number of predictors is reached, or when a perfect predictor is found. 
+
+To make predictions, Adaboost simply computes the predictions of all the predictors and weighs them using the predictor weights $\alpha_j$. The predicted class is the one that receives the majority of weighted votes. 
+
+Here's the equation used for Adaboost predictions: 
+
+<img src="Hands_on_ML_notes.assets/image-20210218145930482.png" alt="image-20210218145930482" style="zoom:80%;" />
+
+The following code trains an AdaBoost classifier based on 200 Decision Stumps: 
+
+```python
+ada_clf = AdaBoostClassifier(
+				DecisionTreeClassifier(max_depth=1),
+                n_estimators=200,
+                algorithm='SAMME.R'
+                learning_rate=0.5
+)
+ada_clf.fit(X_train, y_train)
+```
+
+
+
+#### Gradient Boosting
+
+Gradient boosting is just like adaboost in the sense that it is a sequential learner. However, the difference lies in the fact that rather than tweaking the weights of each instance the predecessor got wrong, gradient boosting trains the algorithm on the residual errors made by the previous algorithm. 
+
+Let's look at a manual example: 
+
+```python
+from sklearn import DecisionTreeRegressor
+
+tree_reg1 = DecisionTreeRegressor(max_depth=2)
+tree_reg1.fit(X, y)
+
+# Now we find the error that the above algorithm has made: 
+y2 = y = tree_reg1.predict(X)
+
+# We now instantiate a new decision tree: 
+tree_reg2 = DecisionTreeRegressor(max_depth=2)
+
+# Fit this on the residual errors of the previous: 
+tree_reg2.fit(X, y2)
+
+...
+```
+
+Here's how we can train gradient boosting regressor: 
+
+```python
+from sklearn.ensemble import GradientBoostingRegressor
+
+gbrt = GradientBoostingRegressor(
+                        max_depth=2,
+    					n_estimators=3,
+    					learning_rate=1.0
+						)
+gbrt.fit(X, y)
+```
+
+Here we set 3 tree stumps. The learning rate hyperparameter scales the contributions of each tree. If you get the value to a low value, such as 0.1, you will need more trees in the ensemble to fit the training set, but the predictions will usually generalize better. This is a regularization technique called **shrinkage**. 
+
+The figure below shows GRBT will large learning rate but low number of stumps while the other shows very small learning rate with large number of stumps. 
+
+<img src="Hands_on_ML_notes.assets/image-20210218155131607.png" alt="image-20210218155131607" style="zoom:80%;" />
+
+In order to find the optimal number of trees, you can use the **method of early stopping**. This is where you stop when the validation error begins to increase. The code below finds the optimal number of stumps: 
+
+```python
+import numpy as np
+from sklearn.model_selection
+import train_test_split
+from sklearn.metrics
+import mean_squared_error
+
+# Split the dataset
+X_train, X_val, y_train, y_val = train_test_split(X, y)
+
+# Define GBRT with 120 stumps
+gbrt = GradientBoostingRegressor(max_depth=2, n_estimators=120)
+gbrt.fit(X_train, y_train)
+
+# Use the iterator staged_predict
+errors = []
+for y_pred in gbrt.staged_predict(X_val):
+    errors.append(mean_squared_error(y_val, y_pred)) 
+
+# Find the best number of trees
+bst_n_estimators = np.argmin(errors) + 1
+
+# Use this optimal number to train
+gbrt_best = GradientBoostingRegressor(max_depth=2,n_estimators=bst_n_estimators)
+gbrt_best.fit(X_train, y_train)
+```
+
+ The `staged_predict()` allows us to measure the validation error at each stage (i.e. the number of stumps we've used). So, we measure validation error after using 1 stump, then 2 stumps, etc...
+
+Graphically, the above code is illustrated as follows: 
+
+<img src="Hands_on_ML_notes.assets/image-20210218155847700.png" alt="image-20210218155847700" style="zoom:80%;" />
+
+We find the number of stumps that give us the lowest validation error. This becomes our optimal number. 
+
+#### Stochastic Gradient Boosting
+
+The stochastic gradient boosting bring about randomness in the selection of training instances for each tree. If we set `subsample=0.25`, then 25% of the samples, selected randomly from the training set are selected. These samples are used to train a given tree. This helps in increasing bias and it also speeds up the training considerably as we use a less number of instances for each tree. 
+
+#### Extreme Gradient Boosting (XGBOOST)
+
+The XGBoost is an optmized implementation of Gradient boosting. It is extremely fast, scalabel and portable. 
+
+```python
+import xgboost
+
+xgb_reg = xgboost.XGBRegressor()
+xgb_reg.fit(X_train, y_train)
+y_pred = xgb_reg.predict(X_val)
+```
+
+XGBoost has nice features such as early stopping: 
+
+```python
+xgb_reg.fit(X_train, y_train,
+           		eval_set=[(X_val, y_val)], early_stopping_rounds=2)
+y_pred = xgb_reg.predict(X_val)
+```
 
