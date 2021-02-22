@@ -2478,3 +2478,34 @@ xgb_reg.fit(X_train, y_train,
 y_pred = xgb_reg.predict(X_val)
 ```
 
+### Stacking
+
+We can think of stacking that is sort of a refinement to ensemble learning. In ensemble learning, we make use of the most common value for classification and take the average of all scores in the regression scenario. Instead, what we do in stacking is to use another ML algorithm, which takes as input the predictions from ML algorithms and makes predictions on their predictions. 
+
+The figure below shows this process: 
+
+<img src="Hands_on_ML_notes.assets/image-20210222084939579.png" alt="image-20210222084939579" style="zoom:80%;" />
+
+We have three algorithms that predict the numerical value of a given new instance. These predictions go as input into a new ML algorithm called **Blending predictor**, which then predicts what the prediction of the new instance should be. 
+
+Here's how the Blending predictor or the Blender is trained. 
+
+1.  Step 1: 
+    1.  We split the training set into a subset 1 and subset 2. The subset 2 is the hold-out set. 
+    2.  The algorithms are trained on subset 1. 
+2.  Step 2: 
+    1.  Subset 2 is then used as input to the trained algorithms.
+    2.  The predictions of the these algorithms becomes a training set for the Blender algorithm.
+
+The two steps are illustrated. in the figure below: 
+
+<img src="Hands_on_ML_notes.assets/image-20210222085809460.png" alt="image-20210222085809460" style="zoom:150%;" />
+
+It is possible to train several different blenders in this way. This will give us a whole layer of blenders. This can be achieved by splitting the traing set into three subsets. The first subset is used to train the ML algorithms, the second layer to train a layer of blenders and finally a third algorithm to train a final blender. 
+
+This would look something like this: 
+
+![image-20210222090039171](Hands_on_ML_notes.assets/image-20210222090039171.png)
+
+Sklearn does not support stacking directly but you can use an open-source implementation such as `DESlib`. 
+
