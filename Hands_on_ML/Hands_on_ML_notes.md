@@ -586,8 +586,7 @@ With these definitions, let's look at some metrics that are often used to evalut
     $$
     
 *   **F1-score** - The F1-score is the harmonic mean of precision and recall. F1-score is particularly useful to compare two or more classifiers. The difference between mean and harmonic mean is that the latter gives more weight to low values. As a result, the classifier will only get a high F1-score if both recall and precision are high.
-
-    $$
+$$
     F_1\text{ score} = 2 \times \frac{precision \times recall}{precision + recall}
     $$
 
@@ -2072,7 +2071,7 @@ It really does not matter which one we use. Both are equally good. However, Gini
 
 Decision tree makes no assumption of the underlying data. This makes decision tree more susceptible to overfitting. 
 
->   A **nonparametric model** is called so not because it has no parameters, which it has a lot, but because the number the of parameters are not determined prior to training. A **parametric model**, such as, linear regression has predetermined parameters before training.  
+>   A **nonparametric model** is called so not because it has no parameters, which it has a lot , but because the number the of parameters are not determined prior to training. A **parametric model**, such as, linear regression has predetermined parameters before training.  
 
 In order to prevent a decision tree from overfitting, we restrict it through regularization. The easiest way to restrict a decision tree is by restricting its depth. This is set by the hyperparameter, `max_depth`. Other hyperparameters used for regularization are: 
 
@@ -2123,7 +2122,7 @@ The cost function associated with regression trees is given by:
 
 #### Instability
 
-In general, decision trees are simple to understand and interpret. They are easy to use, versatile, an powerful. However, there are few limitations. 
+In general, decision trees are simple to understand and interpret. They are easy to use, versatile, and powerful. However, there are few limitations. 
 
 *   **Decision trees love orthogonal decision boundaries**. They always split vertically or horizontally. This makes then sensitive to training set rotation. 
 
@@ -2131,7 +2130,7 @@ In general, decision trees are simple to understand and interpret. They are easy
 
     <img src="Hands_on_ML_notes.assets/image-20210218105403183.png" alt="image-20210218105403183" style="zoom:80%;" />
 
-    As you can see in the left figure, the decision tree  is able to easily fit the data. But we rotate the feature space by 45 degrees, and now we have a decision tree that is more complex. The model on the right will not generalize well. We can avoid this by using PCA. 
+    As you can see in the left figure, the decision tree is able to easily fit the data. But we rotate the feature space by 45 degrees, and now we have a decision tree that is more complex. The model on the right will not generalize well. We can avoid this by using PCA. 
 
 *   **Decision trees are generally more sensitive to small variations**. If you were to remove the widest Iris versicolor from the iris training set ([4.8, 1.8]), we get a model representation that looks like this: 
 
@@ -2186,7 +2185,7 @@ If we wish to predict the class with the highest class probability, averaged ove
 
 ### Bagging & Pasting
 
-In the previous section, we saw how we created an ensemble of different algorithm, which were trained on the same dataset and made predictions. Another approach is to use the same training algorithm but train each of them on a different random subset of the training set. For example, take logistic regression as our algorithm. We then create 1000 random training sets or samples. We then make 1000 copies of logisitic regression and train each of them on these 1000 training samples. 
+In the previous section, we saw how we created an ensemble of different algorithm, which were trained on the same dataset and make predictions. Another approach is to use the same training algorithm but train each of them on a different random subset of the training set. For example, take logistic regression as our algorithm. We then create 1000 random training sets or samples. We then make 1000 copies of logisitic regression and train each of them on these 1000 training samples. 
 
 *   When the samples are created randomly **with replacement** , it is called **bagging**
 *   When the samples are created randomly **without replacement**, it is called **pasting**
@@ -2197,7 +2196,7 @@ In the previous section, we saw how we created an ensemble of different algorith
 
 Once all the algorithms are trained, the prediction is made using a majority rule (classification) or by taking the mean of the predictions (regression). 
 
->   The use of ensemble learning reduces both the bias and variance
+>   The use of ensemble learning reduces variance as we take the average, we effectively take the average of the variance. The total variance is the ensemble is the sum of the variance of each algorithm divided by the total number of algorithms. This has no effect on the bias. Therefore, we are able to reduce variance by keeping the bias the same. 
 
 Bagging and pasting can be trained in parallel using CPUs or GPUs.  This is why bagging and pasting is scales easily. 
 
