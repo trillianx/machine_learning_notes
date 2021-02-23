@@ -2259,7 +2259,7 @@ Set `bootstrap=False` and `max_samples=1.0` to keep all training instances but s
 
 ### Random Forest
 
-Instead of using bagging and passing it a decision tree algorith, you can instead use the Random Forest classifier. It is optimized for decision trees. Also, the random forest classifier randomizes on the features rather than instances as bagging does. 
+Instead of using bagging and passing it a decision tree algorithm, you can instead use the Random Forest classifier. It is optimized for decision trees. Also, the random forest classifier randomizes on the features rather than instances as bagging does. 
 
 ```python
 from sklearn.ensemble import RandomForestClassifier
@@ -2280,7 +2280,7 @@ As mentioned, the Random Forest classifier randomly selects a set of k features 
 
 #### Extra Tree
 
-Rather than using the best feature from a subset of randomly selected features to split the feature space, it is possible to make trees even more random by also using random thresholds for each feature rather than searching for the best possible thresholds. This is known as **extremely randomized trees**. This technique is much faster than standard random forest because the slowest thing in the random forest is identifying the optimal feature to split on for a given node. 
+**Extremely randomized trees** or Extra Trees for sort is a technique where we create 1000s of unpruned decision on all of the dataset and not bootstrap dataset. We pick randomly a subset of features and create node on one of the samples. Unlike Random Forest, the node creation is not optimized but randomized. This technique is much faster than standard random forest because the slowest thing in the random forest is identifying the optimal feature to split on for a given node. 
 
 Sklearn has the following class, `ExtraTreesClassifier()` which does what we just described above. 
 
@@ -2315,17 +2315,41 @@ Random Forest are very handy to get a quick understanding of what features actua
 
 ### Boosting
 
-Boosting refers to an ensemble method that combines several weak learners into a strong learner. The general idea behind boosting is that you train algorithms on the mistakes of the previous algorithm sequentially such that each correct the mistakes of their predecessors. Let's look at some of the most popular boosting algorithms. 
+Boosting refers to an ensemble method that combines several weak learners into a strong learner. The general idea behind boosting is that you train algorithms on the mistakes of the previous algorithm sequentially such that each algorithm corrects the mistakes of their predecessors. Let's look at some of the most popular boosting algorithms. 
 
 #### Adaboost
 
 Adaboost, which is sort of **Adaptive Boosting** trains on the mistakes of its predecessor. For example, an adaboost classifier will first train a base classifier (e.g. a Decision Tree) and uses it to make predictions on the training set. Each of the training instances have the same weight. The algorithm then increases the relative weights of misclassified training instances. Then it trains the second classifier, using the updated weights, and again makes predictions on the training set, updates the instance weights, and so on. 
 
-This is illustrated in the figure below: 
+Suppose we wish to classify the `+` class and the `-` class as shown in the figure below: 
 
-<img src="Hands_on_ML_notes.assets/image-20210218135822637.png" alt="image-20210218135822637" style="zoom:80%;" />
+<img src="Hands_on_ML_notes.assets/image-20210223102843254.png" alt="image-20210223102843254" style="zoom:33%;" />
 
-We begin with training instances that have the same color, indicating same weight. But as the algorithm makes mistakes, the weights of the instances are increased (darker color). Once all the algorithms have been trained, the predictions are made very much like bagging or pasting, except that the algorithms have different weights depending on their overall accuracy on the weighted training set. 
+We start with weak classifiers that divide the feature space either vertically or horizontally. We go through the rounds: 
+
+**Round 1:** 
+
+<img src="Hands_on_ML_notes.assets/image-20210223103027726.png" alt="image-20210223103027726" style="zoom:33%;" />
+
+In this round the weak classifier has marked vertically a decision boundary. But it got some observations wrong. So, after the algorithm has been trained and we find the observations it got wrong, we increase the weights of those observations. 
+
+**Round 2:**
+
+<img src="Hands_on_ML_notes.assets/image-20210223103159648.png" alt="image-20210223103159648" style="zoom:33%;" />
+
+We keep the first weak learner but use a second weak learner to learn on the mistakes of the first learner. Again, those that are marked wrong, we increase their weights. 
+
+**Round 3:**
+
+<img src="Hands_on_ML_notes.assets/image-20210223103310915.png" alt="image-20210223103310915" style="zoom:33%;" />
+
+We have now the third weak learner and finally, we give different weights to each learner to create our final ensemble of weak learners: 
+
+<img src="Hands_on_ML_notes.assets/image-20210223103426034.png" alt="image-20210223103426034" style="zoom:33%;" />
+
+which has correctly created a decision boundary. 
+
+
 
 >   Because Adaboost is sequential, it cannot be parallelized and as a result this technique does not scale as well as bagging or scaling. 
 
