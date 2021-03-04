@@ -199,3 +199,112 @@ Note that only a square matrices can be symmetric. If $\bold{A}$ is invertible t
 
 #### Multiplication by a Scalar
 
+When a matrix is multiplied by a scalar, each element in the matrix is multiplied by it. Therefore a scalar multiplication can be thought of as: $K_{ij} = \lambda a_{ij}$ where $\bold{A}$ is a matrix and $\lambda$ is the scalar. 
+
+Here are properties of scalar multiplication: 
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304130730389.png" alt="image-20210304130730389" style="zoom:67%;" />
+
+#### Compact Representation of System of Linear Equations
+
+As we have seen earlier, we can represent a series of linear equations compactly when we use a matrix notation. Consider the following system of linear equations: 
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304130921495.png" alt="image-20210304130921495" style="zoom:80%;" />
+
+These can be represented using a matrix notation as: 
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304131001497.png" alt="image-20210304131001497" style="zoom:67%;" />
+
+Generally, a system of linear equations are represented as $\bold{Ax = b}$, and the $\bold{Ax}$ is a linear combination of the columns of $\bold{A}$. 
+
+### Solving Systems of Linear Equations
+
+The key to solving a system of linear equations are *elementary transformations* that keep the solution set the same, but that transform the equation system into a simpler form. The steps taken to achieve that are: 
+
+*   Exchange of two equations (rows in the matrix representing the system of equations)
+*   Multiplication of an equation (row) with a constant $\lambda \in \R$. 
+*   Addition of two equations (rows)
+
+Let's see an example in action. Consider the following systems of equations: 
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304131834799.png" alt="image-20210304131834799" style="zoom:50%;" />
+
+We write this as an **augmented matrix**: [**A**|b]: 
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304131927167.png" alt="image-20210304131927167" style="zoom:50%;" />
+
+Now we swap the first and third rows. This leads to the following form:
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304132110041.png" alt="image-20210304132110041" style="zoom:50%;" />
+
+Now we subtract -4 times row 1 from row 2, +2 times row 1 from row 3 and simply subtract row 1 from row 4. Doing this leads to the following transformation:
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304132239199.png" alt="image-20210304132239199" style="zoom:50%;" />
+
+This is known as the **row-echelon form**. Doing so, we have transformed the system of linear equations to: 
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304132429908.png" alt="image-20210304132429908" style="zoom:50%;" />
+
+Now we can only solve for $a$, which is $-1$. The rest we cannot as there are 5 unknowns and 3 values. However, we can get a particular solution if we set $x_5 = 0$. 
+
+In solving a system of linear equations, it helps get to the row-echelon form. Once we get there, solving the systems of linear equations get easier. 
+
+#### Calculating the Inverse
+
+To find the inverse of a matrix $\bold{A}$, we need to find a matrix $\bold{X^{-1}}$ such that $\bold{AX} = \bold{I}$. Solving for $\bold{X}$ will give us the inverse of $\bold{A}$. The inverse of a matrix is easily done using the **Gaussian Elimination technique**. Let's take an example: 
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304134442496.png" alt="image-20210304134442496" style="zoom:50%;" />
+
+We write this matrix as an augmented matrix:
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304134509838.png" alt="image-20210304134509838" style="zoom:50%;" />
+
+Now we use Gaussian Elimination in such a way that our matrix looks like an identity matrix:
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304134559306.png" alt="image-20210304134559306" style="zoom:50%;" />
+
+The resultant matrix on the right is then the inverse matrix:
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304134630076.png" alt="image-20210304134630076" style="zoom:50%;" />
+
+#### Algorithms to Solving Systems of Linear Equations
+
+In general, the ask is the solve a system of linear equations of the form $\bold{Ax} = b$. If the solution exists, there are various ways to solve it: 
+
+1.  If $\bold{A}$ is a square matrix and invertible, we can find an inverse and then solve for $\bold{x}$. 
+
+2.  We can find an approximate solution by using the approach of linear regression which we discuss in Chapter 9.
+
+3.  Gaussian elimination is another approach to find solutions.
+
+4.  An iterative method. In this case, the idea is to find $\bold{x}$ in an iterative fashion, often written as:
+    $$
+    x^{(k+1)} = Cx^{(k)} + d
+    $$
+    for suitable $C$ and $d$ that reduces the residual error $||x^{(k+1)} - x_{*}||$ in every iteration and converges to $x_{*}$.  
+
+5.  Other practical methods to solve is to use Richardson method, the Jacobi method, and others. 
+
+    
+
+### Vector Spaces
+
+A vector space is a structured space in which vectors live. A group is a set of elements and an operation defined on these elements that keeps some structure of the set intact. More formally, 
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304140216288.png" alt="image-20210304140216288" style="zoom:67%;" /> 
+
+If the operation between two elements of the group is commutative then the group is called an **Abelian group**.
+
+Here are few other properties of Vector Spaces
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304143925362.png" alt="image-20210304143925362" style="zoom:50%;" />
+
+Another important property if **linear independence**. We say that set of linearly independent vectors consists of vectors that have no redundancy, i.e., if any vector is removed, we will lose something. 
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304144206677.png" alt="image-20210304144206677" style="zoom:50%;" /> 
+
+Here are few other properties of linear dependence and independence: 
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304144543229.png" alt="image-20210304144543229" style="zoom:50%;" />![image-20210304144620238](Mathematics_of_ML_Part_01.assets/image-20210304144620238.png)
+
+![image-20210304144620238](Mathematics_of_ML_Part_01.assets/image-20210304144620238.png)
+
