@@ -16,11 +16,11 @@ Machine learning concerns general purpose methodologies that can be applied to a
 *   **model**:  To achieve this goal, we need a model that can learn from the data and generalize well to yet unseen data. 
 *   **learning**: The model "learns" from the data to find patterns and structure by optimizing parameters in an autonomous way. 
 
-The first part of this book these three components of ML. We will briefly describe these components and revist them in Chapter 8. It is important to talk a little more about them as often in ML parlance they may be misinterpreted or misused. 
+The first part of this book covers these three components of ML. We will briefly describe these components and revist them in Chapter 8. In greater detail we say that: 
 
-*   **Data**: In this book, we assume that the data has already been preprocessed and is in the tidy format. Data are represented as **vectors**. A vector can be represented as an array (CS concept) or one that has direction and magnitude (Physics concept) or an object that obeys addition and scaling (Mathematical concept). 
+*   **Data**: are represented as **vectors**. A vector can be represented as an array (CS concept) or one that has direction and magnitude (Physics concept) or an object that obeys addition and scaling (Mathematical concept). In this book, we assume that the data has already been preprocessed and is in the tidy format.
 *   **Model**: A model is a process of generating data, similar to the dataset at hand. A good model is the one whose output closely resembles the data at hand.
-*   **Learning**: Training means using the data and optimizing the model parameters with respect to a metric that evaluates how well the model predicts the training and test data. 
+*   **Learning**: means using the data and optimizing the model parameters with respect to a metric that evaluates how well the model predicts the training and test data. 
 
 ### Four Pillars
 
@@ -32,7 +32,7 @@ The first part of the book deals with the foundation while the second deals with
 
 Here's how each component of the foundation is used: 
 
-*   **Linear Algebra**: Data are represented as vectors while a collection of vectors is a **matrix**. So, when dealing with data, we need to deal with vectors and matrices. Hence, linear algebra, which is a study of vectors and matrices. 
+*   **Linear Algebra**: Data are represented as vectors while a collection of vectors is a **matrix**. So, when dealing with data, we need to deal with vectors and matrices. Hence, linear algebra is a study of vectors and matrices. 
 *   **Analytic Geometry**: We make use of similarity of vectors or even distances between vectors. These two concepts are central to analytic geometry. 
 *   **Matrix Decomposition**: Manipulation of data involves manipulation of matrices. Therefore, matrix decomposition plays a central part in working with matrices. 
 *   **Probability Theory**: There is inherent uncertainty involved in measurement and predictions. The probability theory measures this uncertainty and quantifies the confidence we have about predictions and measurements. 
@@ -51,7 +51,7 @@ The second part of the book deals with the four pillars. Here we describe what e
 
 When formulating concepts, a common approach is to associate symbols to objects and manipulate these symbols by constructing a set of rules. This is known as **Algebra**. 
 
->   Linear Algebra is a study of vectors and certain rules to manipulate vectors
+>   Linear Algebra is a study of vectors and rules to manipulate vectors
 
 We take the mathematical concept of vectors here: vectors are objects that can be added or multiplied by a scalar to produce another object of the same kind.
 
@@ -81,7 +81,7 @@ Here is a mind map of the concepts introduced in this chapter, along with where 
 
 ### Systems of Linear Equations
 
-Systems of linear equations play a central part in linear algebra. Many problems can be forumulated as systems and linear algebra gives us the tools for solving them. 
+Systems of linear equations play a central part in linear algebra. Many problems can be forumulated as or boiled down to systems and linear algebra gives us the tools to solve them.
 
 The equation below gives a general form of a system of linear equations
 
@@ -92,11 +92,11 @@ where $a_{ij} \in \R$ and $b_i \in \R$ are constants and $x_i \in \R$ are the un
 If we have a system of linear equation of two variables, $x_1, x_2$, such as these: 
 
 <img src="Mathematics_of_ML_Part_01.assets/image-20210304103746600.png" alt="image-20210304103746600" style="zoom:67%;" />
-each linear equation defines a line on the $x_1x_2$-plane. The solution space of a system of two linear equations with two variables can be geometrically interpreted as the intersection of two lines. Every linear equation represents a line: 
+each linear equation defines a line on the $x_1x_2$-plane. The solution space of a system of two linear equations with two variables can be geometrically interpreted as the intersection of two lines. Every point on the line satsifies that linear equation while the points at the intersection of the two lines satisfy both equations. 
 
 <img src="Mathematics_of_ML_Part_01.assets/image-20210304102828797.png" alt="image-20210304102828797" style="zoom:67%;" />
 
-Similarly for 3D, each linear equation determines a plane in 3D space. When these planes intersect, those value satisfy all linear equations at the same time. 
+Similarly in three dimensions, each linear equation determines a plane in 3D space. When these planes intersect, those values satisfy all linear equations. 
 
 In general, for a real-valued system of linear equations we can obtain: 
 
@@ -104,7 +104,7 @@ In general, for a real-valued system of linear equations we can obtain:
 2.  Exactly one solution (i.e. when there is just one intersection)
 3.  Infinitely many solutions (i.e. when the planes are parallel to each other and touching)
 
-Linear equations given by equation 2.3. is an example that a linear regression solves.
+Linear equations given by equation 2.3. is an example that a linear regression solves. We will see more on this later. Picture a table of values, our dataset. These would be our $x_i$. Each row is an observation and a single equation with $x_i$ variables. The output variable is $b_i$. When we solve the linear regression, we are in fact solving a system of linear equations (corresponding to $m$ observations) and find $a_i$ that satisfy this system.
 
 For a systematic approach to solving systems of linear equations, we introduce a useful compact notation. Let's start with an example. Consider the following system of equations we have already seen in equation 2.8 above. We can represent these as follows: 
 $$
@@ -195,7 +195,7 @@ Here are some properties of inverses and transpose:
 
 <img src="Mathematics_of_ML_Part_01.assets/image-20210304111029375.png" alt="image-20210304111029375" style="zoom:67%;" />
 
-Note that only a square matrices can be symmetric. If $\bold{A}$ is invertible then so is $\bold{A}^T$. 
+The identify matrix is a symmetric matrix. Note that only a square matrices can be symmetric. If $\bold{A}$ is invertible then so is $\bold{A}^T$. 
 
 #### Multiplication by a Scalar
 
@@ -218,7 +218,9 @@ Generally, a system of linear equations are represented as $\bold{Ax = b}$, and 
 
 ### Solving Systems of Linear Equations
 
-The key to solving a system of linear equations are *elementary transformations* that keep the solution set the same, but that transform the equation system into a simpler form. The steps taken to achieve that are: 
+The key to solving a system of linear equations are *elementary transformations* that keep the solution set the same, but that transform the equation system into a simpler form. The objective is to bring the matrix such that the one side of the diagonal, all elements are zero. 
+
+The steps taken to achieve that are: 
 
 *   Exchange of two equations (rows in the matrix representing the system of equations)
 *   Multiplication of an equation (row) with a constant $\lambda \in \R$. 
@@ -244,9 +246,38 @@ This is known as the **row-echelon form**. Doing so, we have transformed the sys
 
 <img src="Mathematics_of_ML_Part_01.assets/image-20210304132429908.png" alt="image-20210304132429908" style="zoom:50%;" />
 
-Now we can only solve for $a$, which is $-1$. The rest we cannot as there are 5 unknowns and 3 values. However, we can get a particular solution if we set $x_5 = 0$. 
+Now we can only solve for $a$, which is $-1$. The rest we cannot as there are 5 unknowns and 3 values. However, we can get a particular solution if we set $x_5 = 0$. Such a solution will look like:
 
-In solving a system of linear equations, it helps get to the row-echelon form. Once we get there, solving the systems of linear equations get easier. 
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304154352282.png" alt="image-20210304154352282" style="zoom:50%;" />
+
+To get a general solution, we follow these steps: 
+
+1.  Find a particular solution to $\bold{Ax} = \bold{b}$. 
+2.  Find all solutions to $\bold{Ax} = \bold{0}$.
+3.  Combine the solutions from steps 1 and 2 to the general solution. 
+
+So, let's find a general solution to our example. If we set equation 2.45 to 0, we can solve for all $x_i$. We would get:
+$$
+x_1 = 2x_2 - 2x_5 \\
+x3 = -x_5 \\
+x4 = 2x_5
+$$
+Now, we substitute. If we take $x_5 = 0$ and $x_2 = 1$, we get: $[2, 1, 0, 0, 0]$. If we set $x_5 = 1$ and $x_2=0$, we get: $[2, 0, -1, 2, 1]$. Therefore, the general solution, which captures the set of all possible solutions is: 
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304155622251.png" alt="image-20210304155622251" style="zoom:50%;" />
+
+Remember that the first solution is the particular one we obtained in equation 2.46. 
+
+>   The leading coefficient of a row (first nonzero number from the left) is called the **pivot** and is always strictly to the right of the pivot of the row above it.
+
+A matrix is in **row-echelon form** if: 
+
+*   All rows that contain only zeros are at the bottom of the matrix; correspondingly, all rows that contain at least one nonzero element are on top of rows that contain only zeros.
+*   Each row has a pivot
+
+>   In solving a system of linear equations, it helps get to the row-echelon form. Once we get there, solving the systems of linear equations get easier. 
+
+The variables that are associated with pivots are called **basic variables** while other variables are called **free variables**. In our example, $x_1, x_3, x_4$ are basic variables while $x_4, x_5$ are free variables. 
 
 #### Calculating the Inverse
 
@@ -307,4 +338,36 @@ Here are few other properties of linear dependence and independence:
 <img src="Mathematics_of_ML_Part_01.assets/image-20210304144543229.png" alt="image-20210304144543229" style="zoom:50%;" />![image-20210304144620238](Mathematics_of_ML_Part_01.assets/image-20210304144620238.png)
 
 ![image-20210304144620238](Mathematics_of_ML_Part_01.assets/image-20210304144620238.png)
+
+
+
+
+
+## Chapter 3: Analytic Geometry
+
+In chapter 2 we studied vectors, vector spaces, and linear mappings at a general but abstract level. In this chapter we will add some geometric interpretation and intuition to all of these concepts. Analytic geometry is used in various ML algorithms such as SVM, kNN, including PCA. 
+
+The figure below gives an overview of how the concepts in this chapter are related and how they connect to other chapters. 
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304145424742.png" alt="image-20210304145424742" style="zoom:50%;" />
+
+We begin our discussion with the length of a vector. 
+
+### Norms
+
+The definition of norm is as follows: 
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304145632922.png" alt="image-20210304145632922" style="zoom:50%;" />
+
+The triangle inequality simply states that the length of the hypothenus is less than or equal to the sum of the other two sides. 
+
+There are two mosst common norms that exists. These are the Manhattan and the Euclidean Norms. 
+
+#### Manhattan Norm
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304145932835.png" alt="image-20210304145932835" style="zoom:50%;" />![image-20210304145957502](Mathematics_of_ML_Part_01.assets/image-20210304145957502.png)
+
+<img src="Mathematics_of_ML_Part_01.assets/image-20210304150041585.png" alt="image-20210304150041585" style="zoom:50%;" />
+
+### Inner Products
 
