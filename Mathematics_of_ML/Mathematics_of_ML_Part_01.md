@@ -73,7 +73,7 @@ In this book, we will largely focus on $\R^n$ since most algorithms in linear al
 
 >   Be careful to check whether array operations actually perform vector operations when implementing on a computer
 
-A major idea in mathematics is the idea of **closure**. This is the question: "What is the **set** of **all things** that can result from my **proposed operations**?" In the case of vectors, this question will be "What is the **set** of **vectors** that can result by starting with **a small set of vectors, and adding them to each other and scaling them**?" This results in a **vector space**. The concept of a vector space and its properties underlie much of machine learning. 
+A major idea in mathematics is the idea of **closure**. This is the question: "What is the **set** of **all things** that can result from a **proposed operations**?" In the case of vectors, this question will be "What is the **set** of **vectors** that can result by starting with **a small set of vectors, and adding them to each other and scaling them**?" This results in a **vector space**. The concept of a vector space and its properties underlie much of machine learning. 
 
 Here is a mind map of the concepts introduced in this chapter, along with where they are used in other parts of the book. 
 
